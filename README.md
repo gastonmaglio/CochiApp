@@ -1,4 +1,4 @@
-# Hogar — Listas y Gastos
+# CochiApp — Listas y Gastos
 
 PWA para gestionar listas de compras y gastos mensuales compartidos entre dos personas, con
 sincronización en tiempo real y funcionamiento offline. Pensada para uso diario desde el celular:
