@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Scripts de diagnóstico/generación de assets, no forman parte de la app en sí
+    // (Node plano, no necesitan las reglas de TypeScript del proyecto).
+    "scripts/**",
   ]),
 ]);
 

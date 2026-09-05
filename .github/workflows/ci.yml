@@ -22,11 +22,12 @@ jobs:
 
       - run: npm ci
 
-      - name: Tipos (TypeScript)
-        run: npm run typecheck
-
       - name: Lint (ESLint)
         run: npm run lint
 
-      - name: Build (Next.js)
+      # El build de Next.js corre TypeScript como parte del proceso (genera antes los
+      # tipos de rutas en .next/types/, de los que dependen tipos como LayoutProps).
+      # Un chequeo de tipos separado ANTES del build fallaría porque esos tipos todavía
+      # no existirían.
+      - name: Build (Next.js, incluye chequeo de tipos)
         run: npm run build
