@@ -1,0 +1,98 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function estaAutenticado() {
+      return request.auth != null;
+    }
+
+    function esMiembroDelHousehold(householdId) {
+      return estaAutenticado()
+        && request.auth.uid in get(/databases/$(database)/documents/households/$(householdId)).data.miembros;
+    }
+
+    match /usuarios/{uid} {
+      // "get" (documento puntual, por uid exacto) lo puede leer cualquier autenticado —
+      // hace falta para mostrar el nombre de los integrantes de un hogar (ej. la pantalla
+      // de "a quién estás reemplazando"). El uid solo se conoce si ya se tiene acceso al
+      // household (por código o por ser miembro), y "list" queda cerrado siempre: nadie
+      // puede recorrer la colección para enumerar usuarios.
+      allow get: if estaAutenticado();
+      allow list: if false;
+      allow write: if estaAutenticado() && request.auth.uid == uid;
+    }
+
+    // El código ES el ID del documento: el lookup siempre es un get() puntual, nunca un list/query,
+    // así nadie puede enumerar códigos ajenos.
+    match /codigosInvitacion/{codigo} {
+      allow get: if estaAutenticado();
+      allow list: if false;
+      allow create: if estaAutenticado() && request.resource.data.creadoPor == request.auth.uid;
+      allow update: if estaAutenticado()
+        && resource.data.usado == false
+        && request.time < resource.data.expiraEn
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usado']);
+      allow delete: if false;
+    }
+
+    // Reemplazo de un integrante: alguien que perdió el acceso a su cuenta (o simplemente
+    // limpió el navegador) necesita poder "recuperar su lugar" con un código nuevo aunque
+    // el hogar ya tenga 2 miembros. Es válido si el hogar seguía teniendo 2 antes y después,
+    // el que pide el cambio no estaba ya adentro, y el otro elemento del array nuevo es
+    // exactamente uno de los que ya estaban (no se cuela un tercero).
+    function esReemplazoValido(miembrosViejos, miembrosNuevos) {
+      return miembrosViejos.size() == 2
+        && miembrosNuevos.size() == 2
+        && request.auth.uid in miembrosNuevos
+        && !(request.auth.uid in miembrosViejos)
+        && miembrosNuevos.removeAll([request.auth.uid])[0] in miembrosViejos;
+    }
+
+    match /households/{householdId} {
+      // "get" (documento puntual) lo puede leer cualquier usuario autenticado — hace falta
+      // para: (a) alguien que todavía NO es miembro pero necesita ver el household antes de
+      // unirse (chequear cupo), y (b) alguien que quiere recuperar su lugar en un hogar ya
+      // completo. Ninguno de los dos campos (nombre, uids de miembros) es sensible, y hace
+      // falta conocer el ID exacto (un auto-ID de Firestore, no adivinable) para leerlo.
+      // "list" queda cerrado siempre: la app nunca hace queries sobre la colección completa,
+      // solo lecturas puntuales por ID, así que nadie puede enumerar households ajenos.
+      allow get: if estaAutenticado();
+      allow list: if false;
+
+      allow create: if estaAutenticado()
+        && request.resource.data.creadoPor == request.auth.uid
+        && request.resource.data.miembros == [request.auth.uid];
+
+      // Tres casos: (a) un miembro actual edita el household sin tocar la lista de miembros,
+      // (b) alguien que todavía NO es miembro se suma a sí mismo como el segundo integrante,
+      // o (c) alguien reemplaza a un integrante existente (hogar ya completo).
+      allow update: if estaAutenticado() && (
+        (request.auth.uid in resource.data.miembros
+          && request.resource.data.miembros == resource.data.miembros)
+        || (
+          !(request.auth.uid in resource.data.miembros)
+          && resource.data.miembros.size() < 2
+          && request.resource.data.miembros == resource.data.miembros.concat([request.auth.uid])
+          && request.resource.data.nombre == resource.data.nombre
+          && request.resource.data.creadoPor == resource.data.creadoPor
+        )
+        || (
+          esReemplazoValido(resource.data.miembros, request.resource.data.miembros)
+          && request.resource.data.nombre == resource.data.nombre
+          && request.resource.data.creadoPor == resource.data.creadoPor
+        )
+      );
+
+      allow delete: if false;
+
+      match /{coleccion}/{documentoId} {
+        allow read, write: if esMiembroDelHousehold(householdId);
+      }
+
+      match /{coleccion}/{documentoId}/{subcoleccion}/{subdocumentoId} {
+        allow read, write: if esMiembroDelHousehold(householdId);
+      }
+    }
+  }
+}

@@ -1,26 +1,98 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+@theme {
+  --color-bg: #fbf6ee;
+  --color-bg-elevated: #ffffff;
+  --color-fg: #45392c;
+  --color-fg-muted: #9c8a76;
+  --color-border: #eadfc8;
+  --color-primary: #6b8f52;
+  --color-primary-fg: #ffffff;
+  --color-primary-soft: #e3ecd6;
+  --color-danger: #d96c62;
+  --color-danger-fg: #ffffff;
+  --color-warning: #d89a4e;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* Modo oscuro automático (preferencia del sistema), salvo que el usuario haya
+   elegido "claro" a mano (ver ThemeContext). */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --color-bg: #211c17;
+    --color-bg-elevated: #2c2620;
+    --color-fg: #f1e8da;
+    --color-fg-muted: #b0a08b;
+    --color-border: #46392c;
+    --color-primary: #93be78;
+    --color-primary-fg: #17240f;
+    --color-primary-soft: #34432a;
+    --color-danger: #e58f86;
+    --color-danger-fg: #3a1310;
+    --color-warning: #e4b172;
   }
 }
 
+/* Modo oscuro elegido a mano, gana siempre (incluso con el sistema en claro). */
+:root[data-theme="dark"] {
+  --color-bg: #211c17;
+  --color-bg-elevated: #2c2620;
+  --color-fg: #f1e8da;
+  --color-fg-muted: #b0a08b;
+  --color-border: #46392c;
+  --color-primary: #93be78;
+  --color-primary-fg: #17240f;
+  --color-primary-soft: #34432a;
+  --color-danger: #e58f86;
+  --color-danger-fg: #3a1310;
+  --color-warning: #e4b172;
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes deslizar-arriba {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes aparecer-fila {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fila-animada {
+    animation: aparecer-fila 0.18s ease-out both;
+  }
 }

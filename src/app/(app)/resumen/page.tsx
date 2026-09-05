@@ -1,0 +1,151 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useCategorias } from "@/hooks/useCategorias";
+import { useGastosDelMes } from "@/hooks/useGastosDelMes";
+import { useEvolucionMensual } from "@/hooks/useEvolucionMensual";
+import { useComprasCerradas } from "@/hooks/useComprasCerradas";
+import { useMiembrosHousehold } from "@/hooks/useMiembrosHousehold";
+import { inicioDeMes, inicioDeMesSiguiente } from "@/lib/utils/fechas";
+import { formatearMonto } from "@/lib/utils/moneda";
+import {
+  compararConMesAnterior,
+  totalGeneral,
+  totalPorCategoria,
+  totalPorResponsable,
+} from "@/lib/utils/agregacionesGastos";
+import { SelectorMes } from "@/components/gastos/SelectorMes";
+import { ComparacionMesBadge } from "@/components/resumen/ComparacionMesBadge";
+import { TotalPorPersonaCard } from "@/components/resumen/TotalPorPersonaCard";
+import { GraficoTortaCategorias } from "@/components/resumen/GraficoTortaCategorias";
+import { GraficoEvolucionMensual } from "@/components/resumen/GraficoEvolucionMensual";
+import { PresupuestoBarra } from "@/components/resumen/PresupuestoBarra";
+import { ExportarCsvButton } from "@/components/resumen/ExportarCsvButton";
+import { CompraCerradaCard } from "@/components/historial/CompraCerradaCard";
+import { CompraCerradaDetalleSheet } from "@/components/historial/CompraCerradaDetalleSheet";
+import { EstadoVacio } from "@/components/ui/EstadoVacio";
+import type { CompraCerrada } from "@/types/compraCerrada";
+
+export default function ResumenPage() {
+  const { user, household } = useAuth();
+  const householdId = household?.id;
+  const uidActual = user?.uid ?? "";
+  const miembros = household?.miembros ?? [];
+  const usuarios = useMiembrosHousehold(miembros);
+
+  const [mes, setMes] = useState(() => new Date());
+  const inicio = useMemo(() => inicioDeMes(mes), [mes]);
+  const fin = useMemo(() => inicioDeMesSiguiente(mes), [mes]);
+  const mesAnterior = useMemo(() => new Date(mes.getFullYear(), mes.getMonth() - 1, 1), [mes]);
+  const inicioAnterior = useMemo(() => inicioDeMes(mesAnterior), [mesAnterior]);
+  const finAnterior = useMemo(() => inicioDeMesSiguiente(mesAnterior), [mesAnterior]);
+
+  const { gastos, cargando: cargandoGastos } = useGastosDelMes(householdId, inicio, fin);
+  const { gastos: gastosMesAnterior } = useGastosDelMes(householdId, inicioAnterior, finAnterior);
+  const { categorias } = useCategorias(householdId, "categoriasGastos");
+  const { puntos: evolucion, cargando: cargandoEvolucion } = useEvolucionMensual(householdId, mes);
+  const { compras, cargando: cargandoCompras } = useComprasCerradas(householdId);
+
+  const [compraSeleccionada, setCompraSeleccionada] = useState<CompraCerrada | null>(null);
+
+  const total = useMemo(() => totalGeneral(gastos), [gastos]);
+  const totalAnterior = useMemo(() => totalGeneral(gastosMesAnterior), [gastosMesAnterior]);
+  const comparacion = useMemo(
+    () => compararConMesAnterior(total, totalAnterior),
+    [total, totalAnterior]
+  );
+  const porPersona = useMemo(() => totalPorResponsable(gastos), [gastos]);
+  const porCategoria = useMemo(() => totalPorCategoria(gastos), [gastos]);
+  const categoriasConPresupuesto = useMemo(
+    () => categorias.filter((c) => c.presupuesto != null),
+    [categorias]
+  );
+
+  return (
+    <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6 pb-10">
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-bg-elevated p-4">
+        <SelectorMes mes={mes} onCambiar={setMes} />
+        <p className="text-3xl font-semibold text-fg">{formatearMonto(total)}</p>
+        <ComparacionMesBadge comparacion={comparacion} />
+      </div>
+
+      {cargandoGastos ? (
+        <div className="h-32 animate-pulse rounded-xl bg-bg-elevated" />
+      ) : (
+        <TotalPorPersonaCard
+          miembros={miembros}
+          usuarios={usuarios}
+          uidActual={uidActual}
+          totales={porPersona}
+        />
+      )}
+
+      <section className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated p-4">
+        <h2 className="text-sm font-semibold text-fg-muted">Por categoría</h2>
+        <GraficoTortaCategorias totalesPorCategoria={porCategoria} categorias={categorias} />
+      </section>
+
+      {categoriasConPresupuesto.length > 0 && (
+        <section className="flex flex-col gap-4 rounded-xl border border-border bg-bg-elevated p-4">
+          <h2 className="text-sm font-semibold text-fg-muted">Presupuestos</h2>
+          {categoriasConPresupuesto.map((categoria) => (
+            <PresupuestoBarra
+              key={categoria.id}
+              categoria={categoria}
+              gastado={porCategoria[categoria.id] ?? 0}
+            />
+          ))}
+        </section>
+      )}
+
+      <section className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated p-4">
+        <h2 className="text-sm font-semibold text-fg-muted">Evolución mensual</h2>
+        {cargandoEvolucion ? (
+          <div className="h-48 animate-pulse rounded-xl bg-bg" />
+        ) : (
+          <GraficoEvolucionMensual puntos={evolucion} />
+        )}
+      </section>
+
+      <ExportarCsvButton
+        gastos={gastos}
+        categorias={categorias}
+        usuarios={usuarios}
+        uidActual={uidActual}
+        mes={mes}
+      />
+
+      <section className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-fg-muted">Historial de compras</h2>
+          <Link
+            href="/listas/historial"
+            className="flex items-center gap-0.5 text-xs font-medium text-primary"
+          >
+            Ver todo <ChevronRight size={14} aria-hidden="true" />
+          </Link>
+        </div>
+        {cargandoCompras ? (
+          <div className="flex flex-col gap-2" aria-hidden="true">
+            {[0, 1].map((i) => (
+              <div key={i} className="h-16 animate-pulse rounded-xl bg-bg-elevated" />
+            ))}
+          </div>
+        ) : compras.length === 0 ? (
+          <EstadoVacio mensaje="Todavía no cerraste ninguna compra." />
+        ) : (
+          <div className="flex flex-col gap-2">
+            {compras.slice(0, 3).map((compra) => (
+              <CompraCerradaCard key={compra.id} compra={compra} onAbrir={setCompraSeleccionada} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <CompraCerradaDetalleSheet compra={compraSeleccionada} onCerrar={() => setCompraSeleccionada(null)} />
+    </main>
+  );
+}
