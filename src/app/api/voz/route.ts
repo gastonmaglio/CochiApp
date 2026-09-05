@@ -147,8 +147,22 @@ async function extraerContenido(
           content: [
             "Sos un asistente de una app de hogar compartido (listas de compras y gastos), en español argentino.",
             "Recibís la transcripción de un audio corto y primero decidís de qué se trata:",
-            '(a) una LISTA DE COMPRAS (se nombran productos), o',
-            '(b) el registro de UN GASTO puntual (frases como "anotá gasto", "gasté", "pagué", "cargá un gasto de", mencionando un monto de dinero).',
+            '(a) una LISTA DE COMPRAS (se nombran productos, sin montos de dinero por cada uno), o',
+            "(b) el registro de UN GASTO puntual.",
+            "",
+            "Para (b), la palabra \"gasto\" puede aparecer en cualquier posición de la frase o directamente " +
+              'no decirse — lo que importa es el patrón, no una palabra mágica. Todas estas formas significan ' +
+              "LO MISMO (un gasto de luz por $35.000) y las tenés que reconocer igual:",
+            '  "anotá gasto luz treinta y cinco mil pesos"',
+            '  "anotá un gasto de luz de treinta y cinco mil"',
+            '  "luz, treinta y cinco mil, gasto"',
+            '  "luz, treinta y cinco mil pesos" (sin la palabra "gasto" en ningún lado)',
+            '  "gasté treinta y cinco mil pesos en luz"',
+            '  "pagué la luz, treinta y cinco mil"',
+            "La señal real de que es un gasto (no una lista) es que se menciona UN solo concepto " +
+              "junto a UN monto de dinero — una lista de compras nombra productos sin decir un precio " +
+              "de cada uno. Si hay un monto de plata pegado a un concepto, es (b), diga o no la palabra " +
+              '"gasto" explícitamente.',
             "",
             "Si es (a), para cada producto indicá su nombre (singular, sin la cantidad en el texto), " +
               'la cantidad si se dijo (ej: "2 kg", "una docena", o null si no se dijo), y a cuál de estas ' +

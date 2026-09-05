@@ -14,6 +14,7 @@ import {
 } from "@/lib/services/voz.service";
 import { CategoriaSelector } from "@/components/listas/CategoriaSelector";
 import { cn } from "@/lib/utils/cn";
+import { formatearMonto } from "@/lib/utils/moneda";
 import type { Categoria } from "@/types/household";
 
 interface ItemRevision {
@@ -159,7 +160,16 @@ export function GrabarVozSheet({
     <Sheet abierto={abierto} onCerrar={cerrarTodo} titulo="Usar el micrófono">
       {gastoRevision ? (
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-fg-muted">Entendí que querés cargar un gasto. Revisalo antes de confirmar:</p>
+          <p className="text-sm text-fg-muted">Entendí esto — revisalo y corregí lo que haga falta:</p>
+          <div className="flex flex-col items-center gap-1 rounded-xl border border-primary/30 bg-primary-soft px-4 py-4 text-center">
+            <span className="text-xs font-medium uppercase tracking-wide text-fg-muted">Gasto</span>
+            <span className="text-lg font-semibold text-fg">
+              {gastoRevision.descripcion.trim() || "(sin descripción)"}
+            </span>
+            <span className="text-2xl font-bold text-primary">
+              {formatearMonto(Number(gastoRevision.monto.replace(",", ".")) || 0)}
+            </span>
+          </div>
           <Input
             label="Descripción"
             value={gastoRevision.descripcion}
