@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Timestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Maximize2, Minimize2, Search, Share2, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,12 +20,15 @@ import {
   type DatosItem,
 } from "@/lib/services/items.service";
 import { renombrarLista } from "@/lib/services/listas.service";
+import { obtenerCategoriaHistorica } from "@/lib/services/itemsFrecuentes.service";
 import { cerrarLista, type ModoCierre } from "@/lib/services/comprasCerradas.service";
+import { crearGasto } from "@/lib/services/gastos.service";
 import { agruparItemsPorCategoria } from "@/lib/utils/agruparItems";
 import { cn } from "@/lib/utils/cn";
 import { formatearMonto } from "@/lib/utils/moneda";
 import { mensajeErrorFirebase } from "@/lib/utils/errores";
 import { AgregarItemBar } from "@/components/listas/AgregarItemBar";
+import { GrabarVozSheet } from "@/components/listas/GrabarVozSheet";
 import { ItemRow } from "@/components/listas/ItemRow";
 import { ItemsFrecuentesRow } from "@/components/listas/ItemsFrecuentesRow";
 import { EditarItemSheet } from "@/components/listas/EditarItemSheet";
@@ -64,6 +68,7 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
   const [cerrando, setCerrando] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [modoSuper, setModoSuper] = useState(false);
+  const [sheetVozAbierto, setSheetVozAbierto] = useState(false);
 
   const categoriaActiva = categoriaSeleccionada ?? categoriasCompras[0]?.id ?? null;
 
@@ -112,6 +117,63 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
       mostrarToast(mensajeErrorFirebase(err));
     } finally {
       setAgregando(false);
+    }
+  }
+
+  async function manejarConfirmarListaVoz(
+    itemsVoz: { nombre: string; cantidad: string | null; categoriaId: string }[]
+  ) {
+    if (!user || !householdId) return;
+    setAgregando(true);
+    try {
+      let indice = 0;
+      for (const item of itemsVoz) {
+        await agregarItem(
+          householdId,
+          listaId,
+          user.uid,
+          { nombre: item.nombre, cantidad: item.cantidad, categoriaId: item.categoriaId, notas: null },
+          Date.now() + indice
+        );
+        indice += 1;
+      }
+      mostrarToast(`Se agregaron ${itemsVoz.length} items desde el audio`);
+    } catch (err) {
+      mostrarToast(mensajeErrorFirebase(err));
+    } finally {
+      setAgregando(false);
+    }
+  }
+
+  async function manejarConfirmarGastoVoz(gastoVoz: {
+    descripcion: string;
+    monto: number;
+    categoriaId: string;
+  }) {
+    if (!user || !householdId) return;
+    try {
+      await crearGasto(householdId, user.uid, {
+        descripcion: gastoVoz.descripcion,
+        monto: gastoVoz.monto,
+        categoriaId: gastoVoz.categoriaId,
+        fecha: Timestamp.now(),
+        responsableUid: null,
+      });
+      mostrarToast(`Gasto "${gastoVoz.descripcion}" cargado`);
+    } catch (err) {
+      mostrarToast(mensajeErrorFirebase(err));
+    }
+  }
+
+  async function manejarSugerirCategoria(nombre: string) {
+    if (!householdId || !nombre.trim()) return;
+    try {
+      const categoriaId = await obtenerCategoriaHistorica(householdId, nombre);
+      if (categoriaId && categoriasCompras.some((c) => c.id === categoriaId)) {
+        setCategoriaSeleccionada(categoriaId);
+      }
+    } catch {
+      // No pasa nada si falla — el usuario igual puede elegir la categoría a mano.
     }
   }
 
@@ -398,6 +460,8 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
         categorias={categoriasCompras}
         categoriaSeleccionada={categoriaActiva}
         onCambiarCategoria={setCategoriaSeleccionada}
+        onNombreCambiado={manejarSugerirCategoria}
+        onAbrirVoz={() => setSheetVozAbierto(true)}
         onAgregar={manejarAgregar}
         cargando={agregando}
       />
@@ -435,6 +499,19 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
         onCerrar={() => setSheetRenombrarAbierto(false)}
         onGuardar={manejarRenombrar}
       />
+
+      {user && householdId && (
+        <GrabarVozSheet
+          abierto={sheetVozAbierto}
+          user={user}
+          householdId={householdId}
+          categoriasCompras={categoriasCompras}
+          categoriasGastos={categoriasGasto}
+          onCerrar={() => setSheetVozAbierto(false)}
+          onConfirmarLista={manejarConfirmarListaVoz}
+          onConfirmarGasto={manejarConfirmarGastoVoz}
+        />
+      )}
     </div>
   );
 }

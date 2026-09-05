@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   increment,
   limit as limitarA,
   onSnapshot,
@@ -44,6 +45,21 @@ export async function incrementarEstadisticaItem(
     },
     { merge: true }
   );
+}
+
+/**
+ * Busca si ya compramos algo con este nombre antes y, si sí, en qué categoría — para
+ * sugerirla sola en vez de obligar a elegirla cada vez que se escribe el mismo item.
+ */
+export async function obtenerCategoriaHistorica(
+  householdId: string,
+  nombre: string
+): Promise<string | null> {
+  const idNormalizado = normalizarNombre(nombre);
+  if (!idNormalizado) return null;
+  const snap = await getDoc(doc(db, "households", householdId, "estadisticasItems", idNormalizado));
+  if (!snap.exists()) return null;
+  return (snap.data() as EstadisticaItem).ultimaCategoriaId;
 }
 
 export function escucharItemsFrecuentes(

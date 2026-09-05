@@ -7,6 +7,7 @@ import { useTareas } from "@/hooks/useTareas";
 import { useMiembrosHousehold } from "@/hooks/useMiembrosHousehold";
 import { useToast } from "@/contexts/ToastContext";
 import {
+  actualizarSubtareas,
   alternarCompletada,
   crearTarea,
   editarTarea,
@@ -20,7 +21,7 @@ import { TareaRow } from "@/components/tareas/TareaRow";
 import { TareaFormSheet } from "@/components/tareas/TareaFormSheet";
 import { Button } from "@/components/ui/Button";
 import { EstadoVacio } from "@/components/ui/EstadoVacio";
-import type { Tarea } from "@/types/tarea";
+import type { Subtarea, Tarea } from "@/types/tarea";
 
 export default function TareasPage() {
   const { user, household } = useAuth();
@@ -97,6 +98,15 @@ export default function TareasPage() {
     }
   }
 
+  async function manejarCambiarSubtareas(tarea: Tarea, subtareas: Subtarea[]) {
+    if (!householdId) return;
+    try {
+      await actualizarSubtareas(householdId, tarea.id, subtareas);
+    } catch (err) {
+      mostrarToast(mensajeErrorFirebase(err));
+    }
+  }
+
   return (
     <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-6 pb-24">
       <div className="flex items-center justify-between">
@@ -127,6 +137,7 @@ export default function TareasPage() {
               onToggleCompletada={manejarToggle}
               onEditar={abrirEditar}
               onBorrar={manejarBorrar}
+              onCambiarSubtareas={manejarCambiarSubtareas}
             />
           ))}
         </ul>

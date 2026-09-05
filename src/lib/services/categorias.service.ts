@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  increment,
   onSnapshot,
   orderBy,
   query,
@@ -33,7 +34,8 @@ export async function crearCategoria(
   icono: string,
   color: string,
   orden: number,
-  presupuesto: number | null = null
+  presupuesto: number | null = null,
+  categoriaPadreId: string | null = null
 ): Promise<string> {
   const ref = await addDoc(collection(db, "households", householdId, tipo), {
     nombre,
@@ -41,6 +43,8 @@ export async function crearCategoria(
     color,
     predefinida: false,
     orden,
+    vecesUsada: 0,
+    categoriaPadreId,
     presupuesto,
     creadoPor: uid,
     creadoEn: serverTimestamp(),
@@ -53,7 +57,13 @@ export async function editarCategoria(
   householdId: string,
   tipo: TipoCategoria,
   categoriaId: string,
-  cambios: { nombre?: string; icono?: string; color?: string; presupuesto?: number | null }
+  cambios: {
+    nombre?: string;
+    icono?: string;
+    color?: string;
+    presupuesto?: number | null;
+    categoriaPadreId?: string | null;
+  }
 ): Promise<void> {
   await updateDoc(doc(db, "households", householdId, tipo, categoriaId), {
     ...cambios,
@@ -72,4 +82,19 @@ export async function eliminarCategoria(
   categoriaId: string
 ): Promise<void> {
   await deleteDoc(doc(db, "households", householdId, tipo, categoriaId));
+}
+
+/**
+ * Cada vez que se usa una categoría (se agrega un item o se carga un gasto en ella) suma
+ * uno — es lo que hace que el selector muestre primero las que de verdad usás, no las
+ * que vienen predefinidas primero por orden alfabético/de fábrica.
+ */
+export async function incrementarUsoCategoria(
+  householdId: string,
+  tipo: TipoCategoria,
+  categoriaId: string
+): Promise<void> {
+  await updateDoc(doc(db, "households", householdId, tipo, categoriaId), {
+    vecesUsada: increment(1),
+  });
 }

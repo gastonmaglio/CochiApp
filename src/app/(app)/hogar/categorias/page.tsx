@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useMemo, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, CornerDownRight, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useToast } from "@/contexts/ToastContext";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/services/categorias.service";
 import { mensajeErrorFirebase } from "@/lib/utils/errores";
 import { formatearMonto } from "@/lib/utils/moneda";
+import { ordenarCategorias } from "@/lib/utils/ordenarCategorias";
 import { CategoriaFormSheet } from "@/components/categorias/CategoriaFormSheet";
 import { cn } from "@/lib/utils/cn";
 import type { Categoria } from "@/types/household";
@@ -36,6 +37,13 @@ export default function CategoriasPage() {
   const [categoriaEditando, setCategoriaEditando] = useState<Categoria | null>(null);
   const [guardando, setGuardando] = useState(false);
 
+  const categoriasOrdenadas = useMemo(() => ordenarCategorias(categorias), [categorias]);
+  const categoriasPadreDisponibles = useMemo(
+    () =>
+      categorias.filter((c) => !c.categoriaPadreId && c.id !== categoriaEditando?.id),
+    [categorias, categoriaEditando]
+  );
+
   function abrirNueva() {
     setCategoriaEditando(null);
     setSheetAbierto(true);
@@ -56,6 +64,7 @@ export default function CategoriasPage() {
     icono: string;
     color: string;
     presupuesto: number | null;
+    categoriaPadreId: string | null;
   }) {
     if (!householdId || !user) return;
     setGuardando(true);
@@ -71,7 +80,8 @@ export default function CategoriasPage() {
           datos.icono,
           datos.color,
           categorias.length,
-          datos.presupuesto
+          datos.presupuesto,
+          datos.categoriaPadreId
         );
       }
       cerrarSheet();
@@ -140,13 +150,19 @@ export default function CategoriasPage() {
           </div>
         ) : (
           <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-bg-elevated">
-            {categorias.map((categoria) => (
+            {categoriasOrdenadas.map((categoria) => (
               <button
                 key={categoria.id}
                 type="button"
                 onClick={() => abrirEditar(categoria)}
-                className="flex min-h-14 items-center gap-3 px-4 py-2 text-left"
+                className={cn(
+                  "flex min-h-14 items-center gap-3 px-4 py-2 text-left",
+                  categoria.categoriaPadreId && "pl-8"
+                )}
               >
+                {categoria.categoriaPadreId && (
+                  <CornerDownRight size={14} className="shrink-0 text-fg-muted" aria-hidden="true" />
+                )}
                 <span
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg"
                   style={{ backgroundColor: `${categoria.color}33` }}
@@ -203,6 +219,7 @@ export default function CategoriasPage() {
         abierto={sheetAbierto}
         categoria={categoriaEditando}
         conPresupuesto={tab === "categoriasGastos"}
+        categoriasPadreDisponibles={categoriasPadreDisponibles}
         cargando={guardando}
         onCerrar={cerrarSheet}
         onGuardar={manejarGuardar}

@@ -12,7 +12,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import type { RepeticionTarea, Tarea } from "@/types/tarea";
+import type { PrioridadTarea, RepeticionTarea, Subtarea, Tarea } from "@/types/tarea";
 
 export interface DatosTarea {
   titulo: string;
@@ -20,6 +20,8 @@ export interface DatosTarea {
   fechaVencimiento: Date | null;
   asignadaA: string | null;
   repetir: RepeticionTarea;
+  prioridad: PrioridadTarea;
+  subtareas: Subtarea[];
 }
 
 const DIAS_POR_REPETICION: Record<Exclude<RepeticionTarea, null>, number> = {
@@ -52,6 +54,8 @@ export async function crearTarea(
     fechaVencimiento: datos.fechaVencimiento ? Timestamp.fromDate(datos.fechaVencimiento) : null,
     asignadaA: datos.asignadaA,
     repetir: datos.repetir,
+    prioridad: datos.prioridad,
+    subtareas: datos.subtareas,
     completada: false,
     completadaPor: null,
     completadaEn: null,
@@ -73,6 +77,24 @@ export async function editarTarea(
     fechaVencimiento: datos.fechaVencimiento ? Timestamp.fromDate(datos.fechaVencimiento) : null,
     asignadaA: datos.asignadaA,
     repetir: datos.repetir,
+    prioridad: datos.prioridad,
+    subtareas: datos.subtareas,
+    actualizadoEn: serverTimestamp(),
+  });
+}
+
+/**
+ * Togglear un solo checkbox de subtarea sin abrir el formulario completo — se manda el
+ * array entero ya actualizado porque Firestore no soporta editar un elemento puntual
+ * dentro de un array de objetos.
+ */
+export async function actualizarSubtareas(
+  householdId: string,
+  tareaId: string,
+  subtareas: Subtarea[]
+): Promise<void> {
+  await updateDoc(doc(coleccionTareas(householdId), tareaId), {
+    subtareas,
     actualizadoEn: serverTimestamp(),
   });
 }
@@ -117,6 +139,10 @@ export async function alternarCompletada(
       fechaVencimiento: Timestamp.fromDate(proximaFecha),
       asignadaA: tarea.asignadaA,
       repetir: tarea.repetir,
+      prioridad: tarea.prioridad,
+      // La próxima ocurrencia arranca con el checklist sin marcar, no arrastra los
+      // checks de la vez anterior — cada semana/mes es una tanda nueva de subtareas.
+      subtareas: tarea.subtareas.map((s) => ({ ...s, hecha: false })),
       completada: false,
       completadaPor: null,
       completadaEn: null,

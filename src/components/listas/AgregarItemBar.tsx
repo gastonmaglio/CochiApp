@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
-import { Plus, Tag } from "lucide-react";
+import { Mic, Plus, Tag } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { Categoria } from "@/types/household";
 
@@ -10,6 +10,11 @@ interface AgregarItemBarProps {
   categoriaSeleccionada: string | null;
   onCambiarCategoria: (categoriaId: string) => void;
   onAgregar: (nombre: string) => void;
+  // Se llama (con debounce) mientras se escribe, para poder sugerir sola la categoría
+  // que se usó la última vez que se compró algo con ese mismo nombre.
+  onNombreCambiado?: (nombre: string) => void;
+  // Si no se pasa, no se muestra el botón (ej: sin OPENAI_API_KEY configurada).
+  onAbrirVoz?: () => void;
   cargando: boolean;
 }
 
@@ -18,16 +23,27 @@ export function AgregarItemBar({
   categoriaSeleccionada,
   onCambiarCategoria,
   onAgregar,
+  onNombreCambiado,
+  onAbrirVoz,
   cargando,
 }: AgregarItemBarProps) {
   const [nombre, setNombre] = useState("");
   const [mostrarCategorias, setMostrarCategorias] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function manejarCambioNombre(valor: string) {
+    setNombre(valor);
+    if (!onNombreCambiado) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => onNombreCambiado(valor), 350);
+  }
 
   function manejarSubmit(evento: FormEvent) {
     evento.preventDefault();
     const valor = nombre.trim();
     if (!valor) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     onAgregar(valor);
     setNombre("");
     inputRef.current?.focus();
@@ -73,12 +89,22 @@ export function AgregarItemBar({
           ref={inputRef}
           type="text"
           value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
+          onChange={(e) => manejarCambioNombre(e.target.value)}
           placeholder="Agregar item…"
           aria-label="Nombre del item"
           maxLength={120}
           className="min-h-11 flex-1 rounded-xl border border-border bg-bg px-3.5 text-base text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-primary"
         />
+        {onAbrirVoz && !nombre && (
+          <button
+            type="button"
+            onClick={onAbrirVoz}
+            aria-label="Armar lista por voz"
+            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-bg text-fg-muted"
+          >
+            <Mic size={18} aria-hidden="true" />
+          </button>
+        )}
         <button
           type="submit"
           disabled={!nombre.trim() || cargando}

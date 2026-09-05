@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import type { Gasto } from "@/types/gasto";
+import { incrementarUsoCategoria } from "@/lib/services/categorias.service";
 
 export interface DatosGasto {
   descripcion: string;
@@ -62,6 +63,11 @@ export async function crearGasto(
     creadoEn: serverTimestamp(),
     actualizadoEn: serverTimestamp(),
   });
+  incrementarUsoCategoria(householdId, "categoriasGastos", datos.categoriaId).catch(
+    (error: unknown) => {
+      console.error("No se pudo actualizar el uso de la categoría", error);
+    }
+  );
   return ref.id;
 }
 

@@ -4,11 +4,12 @@ import type { ComparacionMes } from "@/lib/utils/agregacionesGastos";
 
 interface ComparacionMesBadgeProps {
   comparacion: ComparacionMes;
+  etiqueta?: string;
 }
 
-export function ComparacionMesBadge({ comparacion }: ComparacionMesBadgeProps) {
+export function ComparacionMesBadge({ comparacion, etiqueta = "mes anterior" }: ComparacionMesBadgeProps) {
   if (comparacion.porcentaje === null) {
-    return <span className="text-xs text-fg-muted">Sin datos del mes anterior para comparar</span>;
+    return <span className="text-xs text-fg-muted">Sin datos de {etiqueta} para comparar</span>;
   }
 
   const subio = comparacion.diferencia > 0;
@@ -26,7 +27,7 @@ export function ComparacionMesBadge({ comparacion }: ComparacionMesBadgeProps) {
       </span>
       <span className="text-fg-muted">
         ({subio ? "+" : ""}
-        {formatearMonto(comparacion.diferencia)} vs. mes anterior)
+        {formatearMonto(comparacion.diferencia)} vs. {etiqueta})
       </span>
     </span>
   );

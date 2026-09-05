@@ -1,6 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
+import { CornerDownRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { ordenarCategorias } from "@/lib/utils/ordenarCategorias";
 import type { Categoria } from "@/types/household";
 
 interface CategoriaSelectorProps {
@@ -10,10 +13,13 @@ interface CategoriaSelectorProps {
 }
 
 export function CategoriaSelector({ categorias, valor, onCambiar }: CategoriaSelectorProps) {
+  const ordenadas = useMemo(() => ordenarCategorias(categorias), [categorias]);
+
   return (
     <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Categoría">
-      {categorias.map((categoria) => {
+      {ordenadas.map((categoria) => {
         const seleccionada = categoria.id === valor;
+        const esSubcategoria = Boolean(categoria.categoriaPadreId);
         return (
           <button
             key={categoria.id}
@@ -22,12 +28,14 @@ export function CategoriaSelector({ categorias, valor, onCambiar }: CategoriaSel
             aria-checked={seleccionada}
             onClick={() => onCambiar(categoria.id)}
             className={cn(
-              "flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors",
+              "flex items-center gap-1.5 rounded-full border font-medium transition-colors",
+              esSubcategoria ? "min-h-8 px-2.5 text-xs" : "min-h-9 px-3 text-sm",
               seleccionada
                 ? "border-primary bg-primary-soft text-primary"
                 : "border-border bg-bg-elevated text-fg-muted"
             )}
           >
+            {esSubcategoria && <CornerDownRight size={12} aria-hidden="true" className="opacity-60" />}
             <span aria-hidden="true">{categoria.icono}</span>
             {categoria.nombre}
           </button>

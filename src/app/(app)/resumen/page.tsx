@@ -2,17 +2,18 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useGastosDelMes } from "@/hooks/useGastosDelMes";
 import { useEvolucionMensual } from "@/hooks/useEvolucionMensual";
 import { useComprasCerradas } from "@/hooks/useComprasCerradas";
 import { useMiembrosHousehold } from "@/hooks/useMiembrosHousehold";
-import { inicioDeMes, inicioDeMesSiguiente } from "@/lib/utils/fechas";
+import { inicioDeMes, inicioDeMesSiguiente, formatearMes } from "@/lib/utils/fechas";
 import { formatearMonto } from "@/lib/utils/moneda";
 import {
   compararConMesAnterior,
+  generarInsightGastos,
   totalGeneral,
   totalPorCategoria,
   totalPorResponsable,
@@ -43,8 +44,18 @@ export default function ResumenPage() {
   const inicioAnterior = useMemo(() => inicioDeMes(mesAnterior), [mesAnterior]);
   const finAnterior = useMemo(() => inicioDeMesSiguiente(mesAnterior), [mesAnterior]);
 
+  const mesAñoAnterior = useMemo(() => new Date(mes.getFullYear() - 1, mes.getMonth(), 1), [mes]);
+  const inicioAñoAnterior = useMemo(() => inicioDeMes(mesAñoAnterior), [mesAñoAnterior]);
+  const finAñoAnterior = useMemo(() => inicioDeMesSiguiente(mesAñoAnterior), [mesAñoAnterior]);
+
+  // Los 3 meses previos al actual (sin incluirlo), para calcular un promedio por
+  // categoría contra el que comparar y generar el insight automático.
+  const inicioPromedio = useMemo(() => new Date(mes.getFullYear(), mes.getMonth() - 3, 1), [mes]);
+
   const { gastos, cargando: cargandoGastos } = useGastosDelMes(householdId, inicio, fin);
   const { gastos: gastosMesAnterior } = useGastosDelMes(householdId, inicioAnterior, finAnterior);
+  const { gastos: gastosAñoAnterior } = useGastosDelMes(householdId, inicioAñoAnterior, finAñoAnterior);
+  const { gastos: gastosPromedio } = useGastosDelMes(householdId, inicioPromedio, inicio);
   const { categorias } = useCategorias(householdId, "categoriasGastos");
   const { puntos: evolucion, cargando: cargandoEvolucion } = useEvolucionMensual(householdId, mes);
   const { compras, cargando: cargandoCompras } = useComprasCerradas(householdId);
@@ -57,11 +68,28 @@ export default function ResumenPage() {
     () => compararConMesAnterior(total, totalAnterior),
     [total, totalAnterior]
   );
+  const totalAñoAnterior = useMemo(() => totalGeneral(gastosAñoAnterior), [gastosAñoAnterior]);
+  const comparacionAnual = useMemo(
+    () => compararConMesAnterior(total, totalAñoAnterior),
+    [total, totalAñoAnterior]
+  );
   const porPersona = useMemo(() => totalPorResponsable(gastos), [gastos]);
   const porCategoria = useMemo(() => totalPorCategoria(gastos), [gastos]);
   const categoriasConPresupuesto = useMemo(
     () => categorias.filter((c) => c.presupuesto != null),
     [categorias]
+  );
+  const porCategoriaPromedio = useMemo(() => {
+    const totales = totalPorCategoria(gastosPromedio);
+    const promedio: Record<string, number> = {};
+    for (const [categoriaId, totalCategoria] of Object.entries(totales)) {
+      promedio[categoriaId] = totalCategoria / 3;
+    }
+    return promedio;
+  }, [gastosPromedio]);
+  const insight = useMemo(
+    () => generarInsightGastos(porCategoria, porCategoriaPromedio, categorias),
+    [porCategoria, porCategoriaPromedio, categorias]
   );
 
   return (
@@ -70,7 +98,20 @@ export default function ResumenPage() {
         <SelectorMes mes={mes} onCambiar={setMes} />
         <p className="text-3xl font-semibold text-fg">{formatearMonto(total)}</p>
         <ComparacionMesBadge comparacion={comparacion} />
+        {totalAñoAnterior > 0 && (
+          <ComparacionMesBadge
+            comparacion={comparacionAnual}
+            etiqueta={formatearMes(mesAñoAnterior)}
+          />
+        )}
       </div>
+
+      {insight && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-primary/30 bg-primary-soft p-4">
+          <Sparkles size={18} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+          <p className="text-sm text-fg">{insight}</p>
+        </div>
+      )}
 
       {cargandoGastos ? (
         <div className="h-32 animate-pulse rounded-xl bg-bg-elevated" />

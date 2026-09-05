@@ -20,6 +20,7 @@ interface DatosCategoria {
   icono: string;
   color: string;
   presupuesto: number | null;
+  categoriaPadreId: string | null;
 }
 
 interface CategoriaFormSheetProps {
@@ -27,6 +28,9 @@ interface CategoriaFormSheetProps {
   categoria: Categoria | null;
   // Presupuesto solo tiene sentido para categorías de gastos, no de compras.
   conPresupuesto: boolean;
+  // Categorías de primer nivel disponibles para elegir como padre (no incluye a la que
+  // se está editando, para no poder ponerla como subcategoría de sí misma).
+  categoriasPadreDisponibles: Categoria[];
   onCerrar: () => void;
   onGuardar: (datos: DatosCategoria) => void;
   onBorrar?: () => void;
@@ -37,6 +41,7 @@ export function CategoriaFormSheet({
   abierto,
   categoria,
   conPresupuesto,
+  categoriasPadreDisponibles,
   onCerrar,
   onGuardar,
   onBorrar,
@@ -52,6 +57,7 @@ export function CategoriaFormSheet({
         <CategoriaForm
           categoria={categoria}
           conPresupuesto={conPresupuesto}
+          categoriasPadreDisponibles={categoriasPadreDisponibles}
           onGuardar={onGuardar}
           onBorrar={onBorrar}
           cargando={cargando}
@@ -64,6 +70,7 @@ export function CategoriaFormSheet({
 function CategoriaForm({
   categoria,
   conPresupuesto,
+  categoriasPadreDisponibles,
   onGuardar,
   onBorrar,
   cargando,
@@ -73,6 +80,9 @@ function CategoriaForm({
   const [color, setColor] = useState(categoria?.color ?? PALETA_COLORES[0]);
   const [presupuesto, setPresupuesto] = useState(
     categoria?.presupuesto != null ? String(categoria.presupuesto) : ""
+  );
+  const [categoriaPadreId, setCategoriaPadreId] = useState<string | null>(
+    categoria?.categoriaPadreId ?? null
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -91,7 +101,13 @@ function CategoriaForm({
       setError("El presupuesto tiene que ser un número mayor a 0.");
       return;
     }
-    onGuardar({ nombre: nombre.trim(), icono: icono.trim(), color, presupuesto: presupuestoNum });
+    onGuardar({
+      nombre: nombre.trim(),
+      icono: icono.trim(),
+      color,
+      presupuesto: presupuestoNum,
+      categoriaPadreId,
+    });
   }
 
   return (
@@ -139,6 +155,46 @@ function CategoriaForm({
           ))}
         </div>
       </div>
+
+      {categoriasPadreDisponibles.length > 0 && (
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-fg-muted">Subcategoría de (opcional)</p>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Categoría padre">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={categoriaPadreId === null}
+              onClick={() => setCategoriaPadreId(null)}
+              className={cn(
+                "min-h-8 rounded-full border px-3 text-xs font-medium transition-colors",
+                categoriaPadreId === null
+                  ? "border-primary bg-primary-soft text-primary"
+                  : "border-border bg-bg-elevated text-fg-muted"
+              )}
+            >
+              Ninguna
+            </button>
+            {categoriasPadreDisponibles.map((padre) => (
+              <button
+                key={padre.id}
+                type="button"
+                role="radio"
+                aria-checked={categoriaPadreId === padre.id}
+                onClick={() => setCategoriaPadreId(padre.id)}
+                className={cn(
+                  "flex min-h-8 items-center gap-1 rounded-full border px-3 text-xs font-medium transition-colors",
+                  categoriaPadreId === padre.id
+                    ? "border-primary bg-primary-soft text-primary"
+                    : "border-border bg-bg-elevated text-fg-muted"
+                )}
+              >
+                <span aria-hidden="true">{padre.icono}</span>
+                {padre.nombre}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {conPresupuesto && (
         <Input
