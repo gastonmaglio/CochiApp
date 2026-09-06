@@ -96,3 +96,38 @@ body {
     animation: aparecer-fila 0.18s ease-out both;
   }
 }
+
+/* Animaciones de la mascota (ver components/ui/Mascota.tsx) — todas por transform/opacity
+   nada más, así no disparan reflow, y todas se apagan solas con prefers-reduced-motion. */
+@keyframes mascota-respirar {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.025) translateY(-2px); }
+}
+@keyframes mascota-saludar {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-4deg); }
+  40% { transform: rotate(3deg); }
+  60% { transform: rotate(-3deg); }
+  80% { transform: rotate(2deg); }
+}
+@keyframes mascota-flotar {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes mascota-pop {
+  0% { transform: scale(0.6) rotate(-6deg); opacity: 0; }
+  60% { transform: scale(1.08) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes mascota-bamboleo {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animar-mascota-respirar { animation: mascota-respirar 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+  .animar-mascota-saludar { animation: mascota-saludar 1.8s ease-in-out infinite; animation-delay: .3s; transform-origin: 70% 60%; }
+  .animar-mascota-flotar { animation: mascota-flotar 3.6s ease-in-out infinite; }
+  .animar-mascota-pop { animation: mascota-pop 0.5s cubic-bezier(.34,1.56,.64,1) both; }
+  .animar-mascota-bamboleo { animation: mascota-bamboleo 1.4s ease-in-out infinite; transform-origin: 50% 100%; }
+}

@@ -55,7 +55,7 @@ export default function InicioPage() {
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 px-4 py-6 pb-24">
       <div className="flex items-center gap-3">
-        <Mascota size={44} />
+        <Mascota size={44} pose="saludando" animacion="saludar" />
         <div>
           <p className="text-lg font-semibold text-fg">Hola{primerNombre ? `, ${primerNombre}` : ""}</p>
           <p className="text-sm text-fg-muted">

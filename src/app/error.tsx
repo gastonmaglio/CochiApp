@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
 import { Button } from "@/components/ui/Button";
+import { Mascota } from "@/components/ui/Mascota";
 
 export default function ErrorGlobal({
   error,
@@ -18,9 +19,7 @@ export default function ErrorGlobal({
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-      <span className="text-4xl" aria-hidden="true">
-        😕
-      </span>
+      <Mascota size={96} pose="verguenza" animacion="respirar" />
       <div>
         <h1 className="text-lg font-semibold text-fg">Algo salió mal</h1>
         <p className="mt-1 max-w-xs text-sm text-fg-muted">

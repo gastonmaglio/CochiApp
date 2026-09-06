@@ -186,7 +186,7 @@ function ListaMovimientos({
   onBorrar: (id: string) => void;
 }) {
   if (movimientos.length === 0) {
-    return <EstadoVacio mensaje={vacioMensaje} />;
+    return <EstadoVacio variante="privado" mensaje={vacioMensaje} />;
   }
   return (
     <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-bg-elevated">

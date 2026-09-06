@@ -138,7 +138,10 @@ export default function TareasPage() {
           ))}
         </div>
       ) : tareasOrdenadas.length === 0 ? (
-        <EstadoVacio mensaje="Todavía no hay tareas del hogar. Agregá la primera — arreglar algo, comprar algo puntual, lo que sea.">
+        <EstadoVacio
+          variante="tareas"
+          mensaje="Todavía no hay tareas del hogar. Agregá la primera — arreglar algo, comprar algo puntual, lo que sea."
+        >
           <Button onClick={abrirNueva}>Crear la primera tarea</Button>
         </EstadoVacio>
       ) : (

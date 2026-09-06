@@ -38,7 +38,10 @@ export default function HistorialComprasPage() {
             ))}
           </div>
         ) : compras.length === 0 ? (
-          <EstadoVacio mensaje="Todavía no cerraste ninguna compra. Cuando lo hagas, va a quedar guardada acá con el detalle de lo que compraste." />
+          <EstadoVacio
+            variante="compras"
+            mensaje="Todavía no cerraste ninguna compra. Cuando lo hagas, va a quedar guardada acá con el detalle de lo que compraste."
+          />
         ) : (
           compras.map((compra) => (
             <CompraCerradaCard key={compra.id} compra={compra} onAbrir={setCompraSeleccionada} />

@@ -6,6 +6,7 @@ import { Lock, Mic, Square, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Mascota } from "@/components/ui/Mascota";
 import { useGrabadora } from "@/hooks/useGrabadora";
 import { useTranscripcionEnVivo } from "@/hooks/useTranscripcionEnVivo";
 import {
@@ -380,7 +381,7 @@ export function GrabarVozSheet({
         <div className="flex flex-col items-center gap-4 py-4">
           {grabadora.estado === "procesando" ? (
             <>
-              <div className="h-16 w-16 animate-pulse rounded-full bg-primary-soft" aria-hidden="true" />
+              <Mascota size={88} pose="relajada-agua" animacion="flotar" />
               <p className="text-sm text-fg-muted">Escuchando y entendiendo lo que dijiste…</p>
             </>
           ) : (

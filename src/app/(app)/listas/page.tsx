@@ -98,7 +98,10 @@ export default function ListasPage() {
           ))}
         </div>
       ) : listas.length === 0 ? (
-        <EstadoVacio mensaje="Todavía no tenés listas. Creá la primera para empezar a coordinar las compras.">
+        <EstadoVacio
+          variante="listas"
+          mensaje="Todavía no tenés listas. Creá la primera para empezar a coordinar las compras."
+        >
           <Button onClick={() => setSheetAbierto(true)}>Crear mi primera lista</Button>
         </EstadoVacio>
       ) : (

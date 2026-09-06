@@ -214,7 +214,7 @@ export default function GastosPage() {
             ))}
           </div>
         ) : gastos.length === 0 ? (
-          <EstadoVacio mensaje="Todavía no cargaste gastos este mes." />
+          <EstadoVacio variante="gastos" mensaje="Todavía no cargaste gastos este mes." />
         ) : (
           <div className="flex flex-col divide-y divide-border">
             {gastos.map((gasto) => (

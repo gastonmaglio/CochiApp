@@ -185,7 +185,7 @@ export default function ResumenPage() {
             ))}
           </div>
         ) : compras.length === 0 ? (
-          <EstadoVacio mensaje="Todavía no cerraste ninguna compra." />
+          <EstadoVacio variante="compras" mensaje="Todavía no cerraste ninguna compra." />
         ) : (
           <div className="flex flex-col gap-2">
             {compras.slice(0, 3).map((compra) => (

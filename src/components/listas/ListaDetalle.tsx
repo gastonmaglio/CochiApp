@@ -39,6 +39,7 @@ import { CerrarCompraSheet } from "@/components/listas/CerrarCompraSheet";
 import { ListaFormSheet } from "@/components/listas/ListaFormSheet";
 import { PantallaCargando } from "@/components/ui/PantallaCargando";
 import { EstadoVacio } from "@/components/ui/EstadoVacio";
+import { Mascota } from "@/components/ui/Mascota";
 import type { Item } from "@/types/item";
 import type { EstadisticaItem } from "@/types/estadisticaItem";
 
@@ -71,6 +72,7 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
   const [busqueda, setBusqueda] = useState("");
   const [modoSuper, setModoSuper] = useState(false);
   const [sheetVozAbierto, setSheetVozAbierto] = useState(false);
+  const [celebrando, setCelebrando] = useState(false);
 
   const categoriaActiva = categoriaSeleccionada ?? categoriasCompras[0]?.id ?? null;
 
@@ -330,6 +332,8 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
       await cerrarLista(householdId, listaId, lista.nombre, user.uid, modo, categoriaGastoId);
       setSheetCerrarAbierto(false);
       mostrarToast("Compra cerrada y guardada en el historial");
+      setCelebrando(true);
+      setTimeout(() => setCelebrando(false), 1700);
     } catch (err) {
       mostrarToast(mensajeErrorFirebase(err));
     } finally {
@@ -458,6 +462,7 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
         {gruposFiltrados.length === 0 ? (
           <div className="px-3 pt-6">
             <EstadoVacio
+              variante={busquedaNormalizada ? "busqueda" : "listas"}
               mensaje={
                 busquedaNormalizada
                   ? `No encontramos nada que coincida con "${busqueda.trim()}".`
@@ -548,6 +553,18 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
           onConfirmarGasto={manejarConfirmarGastoVoz}
           onConfirmarTarea={manejarConfirmarTareaVoz}
         />
+      )}
+
+      {celebrando && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center gap-2"
+        >
+          <Mascota size={140} pose="flores" animacion="aparecer-pop" />
+          <p className="animar-mascota-pop rounded-full bg-bg-elevated px-4 py-1.5 text-sm font-semibold text-fg shadow-lg">
+            ¡Compra cerrada! 🎉
+          </p>
+        </div>
       )}
     </div>
   );
