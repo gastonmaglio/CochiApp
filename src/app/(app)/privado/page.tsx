@@ -84,7 +84,7 @@ export default function PrivadoPage() {
 
       <div className="flex flex-col gap-6 px-4 py-6 pb-10">
         <p className="rounded-xl border border-dashed border-blush/40 bg-blush-soft px-4 py-3 text-center text-xs text-fg">
-          Solo vos ves esta pantalla. Tu pareja no puede ver estos montos ni aunque busque.
+          Solo yo
         </p>
 
         {cargando ? (
