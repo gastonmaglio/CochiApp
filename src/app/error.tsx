@@ -21,7 +21,7 @@ export default function ErrorGlobal({
     <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
       <Mascota size={96} pose="verguenza" animacion="respirar" />
       <div>
-        <h1 className="text-lg font-semibold text-fg">Algo salió mal</h1>
+        <h1 className="font-display text-lg font-semibold text-fg">Algo salió mal</h1>
         <p className="mt-1 max-w-xs text-sm text-fg-muted">
           No pudimos mostrar esta pantalla. Los datos siguen a salvo — probá de nuevo.
         </p>

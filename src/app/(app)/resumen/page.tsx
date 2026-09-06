@@ -94,9 +94,9 @@ export default function ResumenPage() {
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6 pb-10">
-      <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-bg-elevated p-4">
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-bg-elevated p-4 shadow-card">
         <SelectorMes mes={mes} onCambiar={setMes} />
-        <p className="text-3xl font-semibold text-fg">{formatearMonto(total)}</p>
+        <p className="font-display text-3xl font-semibold text-fg">{formatearMonto(total)}</p>
         <ComparacionMesBadge comparacion={comparacion} />
         {totalAñoAnterior > 0 && (
           <ComparacionMesBadge
@@ -124,13 +124,13 @@ export default function ResumenPage() {
         />
       )}
 
-      <section className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated p-4">
+      <section className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated p-4 shadow-card">
         <h2 className="text-sm font-semibold text-fg-muted">Por categoría</h2>
         <GraficoTortaCategorias totalesPorCategoria={porCategoria} categorias={categorias} />
       </section>
 
       {categoriasConPresupuesto.length > 0 && (
-        <section className="flex flex-col gap-4 rounded-xl border border-border bg-bg-elevated p-4">
+        <section className="flex flex-col gap-4 rounded-xl border border-border bg-bg-elevated p-4 shadow-card">
           <h2 className="text-sm font-semibold text-fg-muted">Presupuestos</h2>
           {categoriasConPresupuesto.map((categoria) => (
             <PresupuestoBarra
@@ -142,7 +142,7 @@ export default function ResumenPage() {
         </section>
       )}
 
-      <section className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated p-4">
+      <section className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated p-4 shadow-card">
         <h2 className="text-sm font-semibold text-fg-muted">Evolución mensual</h2>
         {cargandoEvolucion ? (
           <div className="h-48 animate-pulse rounded-xl bg-bg" />
@@ -161,9 +161,9 @@ export default function ResumenPage() {
 
       <Link
         href="/privado"
-        className="flex min-h-14 items-center gap-3 rounded-xl border border-border bg-bg-elevated px-4 py-3"
+        className="flex min-h-14 items-center gap-3 rounded-xl border border-blush/30 bg-blush-soft px-4 py-3"
       >
-        <Lock size={18} className="text-fg-muted" aria-hidden="true" />
+        <Lock size={18} className="text-blush" aria-hidden="true" />
         <span className="flex-1 text-sm font-medium text-fg">Mis finanzas privadas</span>
         <ChevronRight size={18} className="text-fg-muted" aria-hidden="true" />
       </Link>

@@ -68,7 +68,7 @@ export default function InicioPage() {
 
       <Link
         href="/tareas"
-        className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4 shadow-card"
       >
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-sm font-semibold text-fg-muted">
@@ -108,7 +108,7 @@ export default function InicioPage() {
 
       <Link
         href="/gastos"
-        className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated p-4"
+        className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated p-4 shadow-card"
       >
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-sm font-semibold text-fg-muted">
@@ -117,7 +117,7 @@ export default function InicioPage() {
           <ArrowRight size={16} className="text-fg-muted" aria-hidden="true" />
         </div>
         <div className="flex items-baseline gap-2">
-          <p className="text-2xl font-semibold text-fg">{formatearMonto(totalActual)}</p>
+          <p className="font-display text-2xl font-semibold text-fg">{formatearMonto(totalActual)}</p>
           {variacion !== null && variacion !== 0 && (
             <span
               className={cn(
@@ -138,7 +138,7 @@ export default function InicioPage() {
 
       <Link
         href="/listas"
-        className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4 shadow-card"
       >
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-sm font-semibold text-fg-muted">

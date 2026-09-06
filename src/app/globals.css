@@ -1,18 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #fbf6ee;
-  --color-bg-elevated: #ffffff;
-  --color-fg: #45392c;
-  --color-fg-muted: #9c8a76;
-  --color-border: #eadfc8;
-  --color-primary: #6b8f52;
+  --color-bg: #fbf2e2;
+  --color-bg-elevated: #fffbf3;
+  --color-bg-sunken: #f3e6cd;
+  --color-fg: #3b2a1c;
+  --color-fg-muted: #8e7657;
+  --color-border: #e8d8b8;
+  --color-primary: #3f7a3d;
   --color-primary-fg: #ffffff;
-  --color-primary-soft: #e3ecd6;
-  --color-danger: #d96c62;
+  --color-primary-soft: #deebd3;
+  --color-clay: #b5703a;
+  --color-clay-fg: #ffffff;
+  --color-clay-soft: #f3e1cd;
+  --color-sky: #3e8fb5;
+  --color-sky-fg: #ffffff;
+  --color-sky-soft: #dceef5;
+  --color-blush: #c96b63;
+  --color-blush-fg: #ffffff;
+  --color-blush-soft: #f7e2df;
+  --color-danger: #c1503f;
   --color-danger-fg: #ffffff;
-  --color-warning: #d89a4e;
-  --font-sans: var(--font-geist-sans);
+  --color-warning: #c98a31;
+  --shadow-card: 0 1px 2px rgba(59, 42, 28, 0.06), 0 8px 24px -12px rgba(59, 42, 28, 0.18);
+  --shadow-pop: 0 2px 4px rgba(59, 42, 28, 0.08), 0 16px 40px -16px rgba(59, 42, 28, 0.28);
+  --font-sans: var(--font-nunito-sans);
+  --font-display: var(--font-fraunces);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -20,33 +33,57 @@
    elegido "claro" a mano (ver ThemeContext). */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-bg: #211c17;
-    --color-bg-elevated: #2c2620;
-    --color-fg: #f1e8da;
-    --color-fg-muted: #b0a08b;
-    --color-border: #46392c;
-    --color-primary: #93be78;
-    --color-primary-fg: #17240f;
-    --color-primary-soft: #34432a;
-    --color-danger: #e58f86;
+    --color-bg: #221b13;
+    --color-bg-elevated: #2c2318;
+    --color-bg-sunken: #1b150f;
+    --color-fg: #f3e7d2;
+    --color-fg-muted: #b39d7d;
+    --color-border: #46392a;
+    --color-primary: #7fbe73;
+    --color-primary-fg: #12210d;
+    --color-primary-soft: #33452c;
+    --color-clay: #e0985e;
+    --color-clay-fg: #2b1c10;
+    --color-clay-soft: #4a3323;
+    --color-sky: #6fc1e8;
+    --color-sky-fg: #0f2630;
+    --color-sky-soft: #223b47;
+    --color-blush: #eda69d;
+    --color-blush-fg: #3a1310;
+    --color-blush-soft: #452a26;
+    --color-danger: #e48a7c;
     --color-danger-fg: #3a1310;
-    --color-warning: #e4b172;
+    --color-warning: #e8b565;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+    --shadow-pop: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 40px -16px rgba(0, 0, 0, 0.6);
   }
 }
 
 /* Modo oscuro elegido a mano, gana siempre (incluso con el sistema en claro). */
 :root[data-theme="dark"] {
-  --color-bg: #211c17;
-  --color-bg-elevated: #2c2620;
-  --color-fg: #f1e8da;
-  --color-fg-muted: #b0a08b;
-  --color-border: #46392c;
-  --color-primary: #93be78;
-  --color-primary-fg: #17240f;
-  --color-primary-soft: #34432a;
-  --color-danger: #e58f86;
+  --color-bg: #221b13;
+  --color-bg-elevated: #2c2318;
+  --color-bg-sunken: #1b150f;
+  --color-fg: #f3e7d2;
+  --color-fg-muted: #b39d7d;
+  --color-border: #46392a;
+  --color-primary: #7fbe73;
+  --color-primary-fg: #12210d;
+  --color-primary-soft: #33452c;
+  --color-clay: #e0985e;
+  --color-clay-fg: #2b1c10;
+  --color-clay-soft: #4a3323;
+  --color-sky: #6fc1e8;
+  --color-sky-fg: #0f2630;
+  --color-sky-soft: #223b47;
+  --color-blush: #eda69d;
+  --color-blush-fg: #3a1310;
+  --color-blush-soft: #452a26;
+  --color-danger: #e48a7c;
   --color-danger-fg: #3a1310;
-  --color-warning: #e4b172;
+  --color-warning: #e8b565;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 40px -16px rgba(0, 0, 0, 0.6);
 }
 
 html,

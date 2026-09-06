@@ -180,16 +180,19 @@ function GastoForm({
           role="switch"
           aria-checked={esPrivado}
           onClick={() => setEsPrivado((v) => !v)}
-          className="flex items-center justify-between rounded-xl border border-border p-3 text-left"
+          className={cn(
+            "flex items-center justify-between rounded-xl border p-3 text-left transition-colors",
+            esPrivado ? "border-blush/40 bg-blush-soft" : "border-border"
+          )}
         >
           <span className="flex items-center gap-2 text-sm font-medium text-fg">
-            <Lock size={15} className="text-fg-muted" aria-hidden="true" />
+            <Lock size={15} className={esPrivado ? "text-blush" : "text-fg-muted"} aria-hidden="true" />
             Gasto privado
           </span>
           <span
             className={cn(
               "h-6 w-11 shrink-0 rounded-full border transition-colors",
-              esPrivado ? "border-primary bg-primary" : "border-border bg-bg"
+              esPrivado ? "border-blush bg-blush" : "border-border bg-bg"
             )}
           >
             <span

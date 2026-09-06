@@ -42,7 +42,7 @@ export default function CrearHogarPage() {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center px-6 py-10 text-center">
         <Mascota size={80} className="mb-2" />
-        <h1 className="text-xl font-semibold text-fg">¡Tu hogar está listo!</h1>
+        <h1 className="font-display text-xl font-semibold text-fg">¡Tu hogar está listo!</h1>
         <p className="mt-2 max-w-xs text-sm text-fg-muted">
           Pasale este código a tu pareja para que se vincule desde su celular.
         </p>
@@ -60,7 +60,7 @@ export default function CrearHogarPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-6 py-10">
       <Mascota size={72} className="mb-4" />
-      <h1 className="text-xl font-semibold text-fg">Creá tu hogar</h1>
+      <h1 className="font-display text-xl font-semibold text-fg">Creá tu hogar</h1>
       <p className="mt-1 mb-6 text-sm text-fg-muted">
         Es el espacio compartido donde van a vivir las listas y los gastos de los dos.
       </p>

@@ -192,9 +192,9 @@ export default function GastosPage() {
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6 pb-24">
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4">
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4 shadow-card">
         <SelectorMes mes={mes} onCambiar={setMes} />
-        <p className="text-center text-2xl font-semibold text-fg">{formatearMonto(totalMes)}</p>
+        <p className="text-center font-display text-2xl font-semibold text-fg">{formatearMonto(totalMes)}</p>
       </div>
 
       <button

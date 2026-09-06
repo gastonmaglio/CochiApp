@@ -27,7 +27,7 @@ export default function HistorialComprasPage() {
         >
           <ArrowLeft size={20} aria-hidden="true" />
         </button>
-        <h1 className="text-lg font-semibold text-fg">Historial de compras</h1>
+        <h1 className="font-display text-lg font-semibold text-fg">Historial de compras</h1>
       </header>
 
       <div className="flex flex-col gap-2 px-4 py-5 pb-10">

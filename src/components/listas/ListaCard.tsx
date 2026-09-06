@@ -12,7 +12,7 @@ interface ListaCardProps {
 
 export function ListaCard({ lista, onBorrar }: ListaCardProps) {
   return (
-    <div className="fila-animada flex min-h-16 items-stretch overflow-hidden rounded-xl border border-border bg-bg-elevated">
+    <div className="fila-animada flex min-h-16 items-stretch overflow-hidden rounded-xl border border-border bg-bg-elevated shadow-card">
       <Link
         href={`/listas/${lista.id}`}
         className="flex min-w-0 flex-1 items-center justify-between gap-2 px-4 py-3 text-left transition-transform active:scale-[0.99]"

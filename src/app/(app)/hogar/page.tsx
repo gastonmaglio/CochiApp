@@ -106,7 +106,7 @@ export default function HogarPage() {
         >
           <ArrowLeft size={20} aria-hidden="true" />
         </button>
-        <h1 className="text-lg font-semibold text-fg">Tu hogar</h1>
+        <h1 className="font-display text-lg font-semibold text-fg">Tu hogar</h1>
       </header>
 
       <div className="flex flex-1 flex-col gap-6 px-4 py-6">
@@ -124,7 +124,7 @@ export default function HogarPage() {
 
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold text-fg-muted">Integrantes</h2>
-          <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-bg-elevated">
+          <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-bg-elevated shadow-card">
             {miembros.map((uid) => (
               <div key={uid} className="flex items-center gap-3 px-4 py-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
@@ -154,7 +154,7 @@ export default function HogarPage() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4">
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4 shadow-card">
               <p className="text-sm text-fg-muted">
                 {hogarCompleto
                   ? "Generá un código para que la persona que perdió el acceso recupere su lugar. No suma un tercer integrante — sigue siendo un hogar de dos."

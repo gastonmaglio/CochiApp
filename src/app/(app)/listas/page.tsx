@@ -68,7 +68,7 @@ export default function ListasPage() {
   return (
     <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-fg">Listas</h1>
+        <h1 className="font-display text-xl font-semibold text-fg">Listas</h1>
         <div className="flex items-center gap-1">
           <Link
             href="/listas/historial"

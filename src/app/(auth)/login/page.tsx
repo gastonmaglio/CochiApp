@@ -69,7 +69,7 @@ export default function LoginPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-6 py-10">
       <div className="mb-8 flex flex-col items-center text-center">
         <Mascota size={88} className="mb-2" />
-        <h1 className="text-2xl font-semibold text-fg">CochiApp</h1>
+        <h1 className="font-display text-2xl font-semibold text-fg">CochiApp</h1>
         <p className="mt-1 text-sm text-fg-muted">Listas y gastos, compartidos con tu pareja</p>
       </div>
 

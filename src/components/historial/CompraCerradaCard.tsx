@@ -12,7 +12,7 @@ export function CompraCerradaCard({ compra, onAbrir }: CompraCerradaCardProps) {
     <button
       type="button"
       onClick={() => onAbrir(compra)}
-      className="flex min-h-16 w-full items-center justify-between rounded-xl border border-border bg-bg-elevated px-4 py-3 text-left"
+      className="flex min-h-16 w-full items-center justify-between rounded-xl border border-border bg-bg-elevated px-4 py-3 text-left shadow-card"
     >
       <span className="min-w-0 flex-1">
         <span className="block truncate text-base font-medium text-fg">{compra.listaNombre}</span>

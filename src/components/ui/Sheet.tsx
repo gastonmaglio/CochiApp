@@ -34,10 +34,10 @@ export function Sheet({ abierto, onCerrar, titulo, children }: SheetProps) {
         role="dialog"
         aria-modal="true"
         aria-label={titulo}
-        className="relative w-full max-w-md rounded-t-2xl bg-bg-elevated px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 shadow-xl animate-[deslizar-arriba_0.2s_ease-out]"
+        className="relative w-full max-w-md rounded-t-2xl bg-bg-elevated px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 shadow-pop animate-[deslizar-arriba_0.2s_ease-out]"
       >
         <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-border" aria-hidden="true" />
-        <h2 className="mb-4 text-lg font-semibold text-fg">{titulo}</h2>
+        <h2 className="mb-4 font-display text-lg font-semibold text-fg">{titulo}</h2>
         {children}
       </div>
     </div>,

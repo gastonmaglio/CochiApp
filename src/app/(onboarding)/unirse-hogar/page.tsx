@@ -83,7 +83,7 @@ export default function UnirseHogarPage() {
     return (
       <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-6 py-10">
         <Mascota size={72} className="mb-4" />
-        <h1 className="text-xl font-semibold text-fg">
+        <h1 className="font-display text-xl font-semibold text-fg">
           &ldquo;{infoCodigo.householdNombre}&rdquo; ya tiene 2 personas
         </h1>
         <p className="mt-1 mb-6 text-sm text-fg-muted">

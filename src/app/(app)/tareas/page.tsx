@@ -117,7 +117,7 @@ export default function TareasPage() {
   return (
     <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-6 pb-24">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-fg">Tareas</h1>
+        <h1 className="font-display text-xl font-semibold text-fg">Tareas</h1>
         <Button onClick={abrirNueva}>
           <Plus size={16} aria-hidden="true" /> Nueva
         </Button>

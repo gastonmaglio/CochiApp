@@ -76,14 +76,14 @@ export default function PrivadoPage() {
         >
           <ArrowLeft size={20} aria-hidden="true" />
         </button>
-        <h1 className="flex items-center gap-1.5 text-lg font-semibold text-fg">
-          <Lock size={16} className="text-fg-muted" aria-hidden="true" />
+        <h1 className="flex items-center gap-1.5 font-display text-lg font-semibold text-fg">
+          <Lock size={16} className="text-blush" aria-hidden="true" />
           Mis finanzas privadas
         </h1>
       </header>
 
       <div className="flex flex-col gap-6 px-4 py-6 pb-10">
-        <p className="rounded-xl border border-dashed border-border px-4 py-3 text-center text-xs text-fg-muted">
+        <p className="rounded-xl border border-dashed border-blush/40 bg-blush-soft px-4 py-3 text-center text-xs text-fg">
           Solo vos ves esta pantalla. Tu pareja no puede ver estos montos ni aunque busque.
         </p>
 
@@ -91,11 +91,11 @@ export default function PrivadoPage() {
           <div className="h-28 animate-pulse rounded-xl bg-bg-elevated" />
         ) : (
           saldo && (
-            <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-bg-elevated p-5 text-center">
+            <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-bg-elevated p-5 text-center shadow-card">
               <span className="text-sm font-medium text-fg-muted">Tu saldo</span>
               <span
                 className={cn(
-                  "text-3xl font-bold",
+                  "font-display text-3xl font-bold",
                   saldo.saldo >= 0 ? "text-primary" : "text-danger"
                 )}
               >
@@ -189,7 +189,7 @@ function ListaMovimientos({
     return <EstadoVacio variante="privado" mensaje={vacioMensaje} />;
   }
   return (
-    <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-bg-elevated">
+    <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-bg-elevated shadow-card">
       {movimientos.map((mov) => (
         <div key={mov.id} className="flex items-center gap-3 px-4 py-3">
           <div className="min-w-0 flex-1">

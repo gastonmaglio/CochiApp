@@ -122,7 +122,7 @@ export default function CategoriasPage() {
         >
           <ArrowLeft size={20} aria-hidden="true" />
         </button>
-        <h1 className="text-lg font-semibold text-fg">Categorías</h1>
+        <h1 className="font-display text-lg font-semibold text-fg">Categorías</h1>
       </header>
 
       <div className="flex flex-col gap-4 px-4 py-5">
@@ -149,7 +149,7 @@ export default function CategoriasPage() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-bg-elevated">
+          <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-bg-elevated shadow-card">
             {categoriasOrdenadas.map((categoria) => (
               <button
                 key={categoria.id}
