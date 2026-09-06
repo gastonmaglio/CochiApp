@@ -16,6 +16,7 @@ interface GastoExtraido {
   descripcion: string;
   monto: number;
   categoria: string;
+  esPrivado: boolean;
 }
 
 interface TareaExtraida {
@@ -165,8 +166,18 @@ async function extraerContenido(
               'dijo (ej: "2 kg", "una docena", o null si no se dijo), y a cuál de estas categorías de compra ' +
               `pertenece: ${listaCategoriasCompras}. Si ninguna encaja, usá "Otros". Separá bien los productos ` +
               "aunque se hayan dicho todos seguidos en una sola frase.",
-            'Además, sugerí un nombre corto para la lista (2-3 palabras, ej: "Supermercado", "Farmacia", ' +
-              '"Ferretería") según lo que se está comprando — si no hay pistas claras, "Lista de compras".',
+            "Separá bien los productos aunque se hayan dicho todos seguidos en una sola frase: tratá como " +
+              'separador entre productos distintos una coma, "y", "o", "también", o cualquier pausa — en este ' +
+              'contexto (dictar qué hay que comprar) un "o" entre dos productos significa que hay que comprar ' +
+              'los dos, nunca que sean alternativas entre las que elegir. Ejemplo: "papa o zanahoria o leche" ' +
+              "son 3 items distintos.",
+            'Además, sugerí un nombre corto para la lista (2-4 palabras). Si casi todos los productos ' +
+              "encajan claramente en una sola de las categorías de arriba, usá el nombre de esa categoría o " +
+              'el rubro de comercio que le corresponde (ej: si son todos productos de Verdulería, nombrá la ' +
+              'lista "Verdulería"; si son de Farmacia, "Farmacia"). Esto vale también si es un solo producto: ' +
+              'un solo item "papa" ya alcanza para nombrar la lista "Verdulería", no hace falta que haya más ' +
+              'productos del mismo rubro. Si los productos son variados o mezclados, ' +
+              'usá "Supermercado". Si no hay ningún producto reconocible, "Lista de compras".',
             'Respondé exactamente: {"tipo": "lista", "nombreLista": string, "items": [{"nombre": string, "cantidad": string|null, "categoria": string}]}',
             "",
             "--- (b) GASTO ---",
@@ -178,7 +189,15 @@ async function extraerContenido(
             "Extraé: una descripción corta (2-4 palabras, sin el monto), el monto en pesos argentinos como " +
               "número (sin puntos de miles, sin el símbolo $, ej. 35000 no 35.000), y a cuál de estas " +
               `categorías de gasto pertenece: ${listaCategoriasGastos}. Si ninguna encaja, "Otros".`,
-            'Respondé exactamente: {"tipo": "gasto", "gasto": {"descripcion": string, "monto": number, "categoria": string}}',
+            "Detectá también si el gasto tiene que quedar privado: si se dijo \"privado\", \"en privado\", " +
+              '"que no lo vea mi pareja", "secreto", "personal" o algo equivalente, "esPrivado": true; si no ' +
+              'se mencionó nada de privacidad, "esPrivado": false.',
+            "Las palabras de control (\"gasto\", \"anotá\", \"anotame\", \"privado\", \"en privado\", " +
+              "\"secreto\") NUNCA son la descripción del gasto: la descripción tiene que ser el concepto real " +
+              'en el que se gastó la plata (ej: "luz", "internet", "regalo de cumpleaños"). Si en el audio no ' +
+              'se menciona ningún concepto real (solo que es un gasto, privado o no, y el monto), usá "Gasto" ' +
+              "como descripción — nunca repitas ahí la palabra \"privado\".",
+            'Respondé exactamente: {"tipo": "gasto", "gasto": {"descripcion": string, "monto": number, "categoria": string, "esPrivado": boolean}}',
             "",
             "--- (c) TAREA ---",
             "Extraé un título corto y claro (sin las palabras de comando tipo \"recordame\" o \"hay que\"), y " +
@@ -209,6 +228,7 @@ async function extraerContenido(
         descripcion: String(parseado.gasto.descripcion ?? "Gasto"),
         monto: Number(parseado.gasto.monto) || 0,
         categoria: String(parseado.gasto.categoria ?? "Otros"),
+        esPrivado: Boolean(parseado.gasto.esPrivado),
       },
     };
   }

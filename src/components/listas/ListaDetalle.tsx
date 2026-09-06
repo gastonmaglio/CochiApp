@@ -25,6 +25,7 @@ import { cerrarLista, type ModoCierre } from "@/lib/services/comprasCerradas.ser
 import { crearGasto } from "@/lib/services/gastos.service";
 import { crearTarea } from "@/lib/services/tareas.service";
 import { agruparItemsPorCategoria } from "@/lib/utils/agruparItems";
+import { sugerirCategoriaPorNombre } from "@/lib/utils/sugerirCategoriaProducto";
 import { cn } from "@/lib/utils/cn";
 import { formatearMonto } from "@/lib/utils/moneda";
 import { mensajeErrorFirebase } from "@/lib/utils/errores";
@@ -185,12 +186,24 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
     }
   }
 
+  function manejarSugerirCategoriaInstantanea(nombre: string) {
+    const categoriaSugerida = sugerirCategoriaPorNombre(nombre, categoriasCompras);
+    if (categoriaSugerida) {
+      setCategoriaSeleccionada(categoriaSugerida);
+    }
+  }
+
   async function manejarSugerirCategoria(nombre: string) {
     if (!householdId || !nombre.trim()) return;
     try {
       const categoriaId = await obtenerCategoriaHistorica(householdId, nombre);
       if (categoriaId && categoriasCompras.some((c) => c.id === categoriaId)) {
         setCategoriaSeleccionada(categoriaId);
+        return;
+      }
+      const categoriaSugerida = sugerirCategoriaPorNombre(nombre, categoriasCompras);
+      if (categoriaSugerida) {
+        setCategoriaSeleccionada(categoriaSugerida);
       }
     } catch {
       // No pasa nada si falla — el usuario igual puede elegir la categoría a mano.
@@ -480,6 +493,7 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
         categorias={categoriasCompras}
         categoriaSeleccionada={categoriaActiva}
         onCambiarCategoria={setCategoriaSeleccionada}
+        onNombreCambiadoInstantaneo={manejarSugerirCategoriaInstantanea}
         onNombreCambiado={manejarSugerirCategoria}
         onAbrirVoz={() => setSheetVozAbierto(true)}
         onAgregar={manejarAgregar}

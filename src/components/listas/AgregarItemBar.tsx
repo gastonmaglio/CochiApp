@@ -10,8 +10,11 @@ interface AgregarItemBarProps {
   categoriaSeleccionada: string | null;
   onCambiarCategoria: (categoriaId: string) => void;
   onAgregar: (nombre: string) => void;
+  // Se llama en cada tecla, sin debounce, para una sugerencia local instantánea (sin red)
+  // — así ya está aplicada aunque se apriete Enter enseguida de terminar de escribir.
+  onNombreCambiadoInstantaneo?: (nombre: string) => void;
   // Se llama (con debounce) mientras se escribe, para poder sugerir sola la categoría
-  // que se usó la última vez que se compró algo con ese mismo nombre.
+  // que se usó la última vez que se compró algo con ese mismo nombre (pega a Firestore).
   onNombreCambiado?: (nombre: string) => void;
   // Si no se pasa, no se muestra el botón (ej: sin OPENAI_API_KEY configurada).
   onAbrirVoz?: () => void;
@@ -23,6 +26,7 @@ export function AgregarItemBar({
   categoriaSeleccionada,
   onCambiarCategoria,
   onAgregar,
+  onNombreCambiadoInstantaneo,
   onNombreCambiado,
   onAbrirVoz,
   cargando,
@@ -34,6 +38,7 @@ export function AgregarItemBar({
 
   function manejarCambioNombre(valor: string) {
     setNombre(valor);
+    onNombreCambiadoInstantaneo?.(valor);
     if (!onNombreCambiado) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => onNombreCambiado(valor), 350);

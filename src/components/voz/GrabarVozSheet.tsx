@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { User } from "firebase/auth";
-import { Mic, Square, X } from "lucide-react";
+import { Lock, Mic, Square, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useGrabadora } from "@/hooks/useGrabadora";
+import { useTranscripcionEnVivo } from "@/hooks/useTranscripcionEnVivo";
 import {
   procesarAudioVoz,
   ErrorVoz,
@@ -27,6 +28,7 @@ interface GastoRevision {
   descripcion: string;
   monto: string;
   categoriaId: string;
+  esPrivado: boolean;
 }
 
 interface TareaRevision {
@@ -51,7 +53,12 @@ interface GrabarVozSheetProps {
     nombreLista: string | null,
     items: { nombre: string; cantidad: string | null; categoriaId: string }[]
   ) => void;
-  onConfirmarGasto: (gasto: { descripcion: string; monto: number; categoriaId: string }) => void;
+  onConfirmarGasto: (gasto: {
+    descripcion: string;
+    monto: number;
+    categoriaId: string;
+    esPrivado: boolean;
+  }) => void;
   onConfirmarTarea: (tarea: { titulo: string; fechaVencimiento: Date | null }) => void;
 }
 
@@ -85,15 +92,22 @@ export function GrabarVozSheet({
   onConfirmarTarea,
 }: GrabarVozSheetProps) {
   const grabadora = useGrabadora();
+  const transcripcionEnVivo = useTranscripcionEnVivo();
   const [nombreLista, setNombreLista] = useState<string | null>(null);
   const [itemsRevision, setItemsRevision] = useState<ItemRevision[] | null>(null);
   const [gastoRevision, setGastoRevision] = useState<GastoRevision | null>(null);
   const [tareaRevision, setTareaRevision] = useState<TareaRevision | null>(null);
   const [errorProceso, setErrorProceso] = useState<string | null>(null);
 
+  useEffect(() => {
+    return () => transcripcionEnVivo.detener();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function cerrarTodo() {
     grabadora.cancelar();
     grabadora.reiniciar();
+    transcripcionEnVivo.detener();
     setNombreLista(null);
     setItemsRevision(null);
     setGastoRevision(null);
@@ -108,6 +122,7 @@ export function GrabarVozSheet({
         descripcion: resultado.gasto.descripcion,
         monto: String(resultado.gasto.monto),
         categoriaId: emparejarCategoria(resultado.gasto.categoria, categoriasGastos),
+        esPrivado: resultado.gasto.esPrivado,
       });
       return;
     }
@@ -133,7 +148,13 @@ export function GrabarVozSheet({
     );
   }
 
+  async function manejarIniciar() {
+    await grabadora.iniciar();
+    transcripcionEnVivo.iniciar();
+  }
+
   async function manejarDetener() {
+    transcripcionEnVivo.detener();
     const blob = await grabadora.detener();
     if (!blob) return;
     setErrorProceso(null);
@@ -184,6 +205,7 @@ export function GrabarVozSheet({
       descripcion: gastoRevision.descripcion.trim(),
       monto,
       categoriaId: gastoRevision.categoriaId,
+      esPrivado: gastoRevision.esPrivado,
     });
     cerrarTodo();
   }
@@ -259,14 +281,41 @@ export function GrabarVozSheet({
             value={gastoRevision.monto}
             onChange={(e) => setGastoRevision({ ...gastoRevision, monto: e.target.value })}
           />
-          <div>
-            <p className="mb-1.5 text-sm font-medium text-fg-muted">Categoría</p>
-            <CategoriaSelector
-              categorias={categoriasGastos}
-              valor={gastoRevision.categoriaId}
-              onCambiar={(id) => setGastoRevision({ ...gastoRevision, categoriaId: id })}
-            />
-          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={gastoRevision.esPrivado}
+            onClick={() => setGastoRevision({ ...gastoRevision, esPrivado: !gastoRevision.esPrivado })}
+            className="flex items-center justify-between rounded-xl border border-border p-3 text-left"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium text-fg">
+              <Lock size={15} className="text-fg-muted" aria-hidden="true" />
+              Gasto privado
+            </span>
+            <span
+              className={cn(
+                "h-6 w-11 shrink-0 rounded-full border transition-colors",
+                gastoRevision.esPrivado ? "border-primary bg-primary" : "border-border bg-bg"
+              )}
+            >
+              <span
+                className={cn(
+                  "block h-[18px] w-[18px] translate-y-px rounded-full bg-bg-elevated shadow transition-transform",
+                  gastoRevision.esPrivado ? "translate-x-5" : "translate-x-0.5"
+                )}
+              />
+            </span>
+          </button>
+          {!gastoRevision.esPrivado && (
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-fg-muted">Categoría</p>
+              <CategoriaSelector
+                categorias={categoriasGastos}
+                valor={gastoRevision.categoriaId}
+                onCambiar={(id) => setGastoRevision({ ...gastoRevision, categoriaId: id })}
+              />
+            </div>
+          )}
           {errorProceso && (
             <p role="alert" className="text-sm text-danger">
               {errorProceso}
@@ -338,7 +387,7 @@ export function GrabarVozSheet({
             <>
               <button
                 type="button"
-                onClick={grabadora.estado === "grabando" ? manejarDetener : grabadora.iniciar}
+                onClick={grabadora.estado === "grabando" ? manejarDetener : manejarIniciar}
                 aria-label={grabadora.estado === "grabando" ? "Terminar grabación" : "Empezar a grabar"}
                 className={cn(
                   "flex h-20 w-20 items-center justify-center rounded-full transition-colors",
@@ -355,9 +404,17 @@ export function GrabarVozSheet({
               </button>
               <p className="text-center text-sm text-fg-muted">
                 {grabadora.estado === "grabando"
-                  ? `Grabando… ${grabadora.segundos}s (tocá para terminar)`
-                  : 'Decí una lista de compras, "anotá gasto, luz, 35 mil pesos", o "recordame sacar la basura el jueves".'}
+                  ? `Grabando… ${grabadora.segundos}s (podés hacer pausas — tocá para terminar)`
+                  : 'Decí una lista de compras, "anotá gasto, luz, 35 mil pesos", o "recordame sacar la basura el jueves". Podés pausar entre cosa y cosa sin problema.'}
               </p>
+              {grabadora.estado === "grabando" && transcripcionEnVivo.disponible && (
+                <div
+                  aria-live="polite"
+                  className="max-h-28 w-full overflow-y-auto rounded-xl border border-border bg-bg-elevated p-3 text-sm text-fg"
+                >
+                  {transcripcionEnVivo.transcripcion || "Escuchando…"}
+                </div>
+              )}
               {(grabadora.error || errorProceso) && !enRevision && (
                 <p role="alert" className="text-center text-sm text-danger">
                   {grabadora.error ?? errorProceso}

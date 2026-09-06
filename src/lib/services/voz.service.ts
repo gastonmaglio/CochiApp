@@ -10,6 +10,7 @@ export interface GastoExtraidoPorVoz {
   descripcion: string;
   monto: number;
   categoria: string;
+  esPrivado: boolean;
 }
 
 export interface TareaExtraidaPorVoz {

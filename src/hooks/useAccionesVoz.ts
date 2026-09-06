@@ -7,6 +7,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { crearLista } from "@/lib/services/listas.service";
 import { agregarItem } from "@/lib/services/items.service";
 import { crearGasto } from "@/lib/services/gastos.service";
+import { crearMovimientoPrivado } from "@/lib/services/finanzasPrivadas.service";
 import { crearTarea } from "@/lib/services/tareas.service";
 import { mensajeErrorFirebase } from "@/lib/utils/errores";
 
@@ -47,9 +48,24 @@ export function useAccionesVoz(householdId: string | undefined, user: User | nul
     }
   }
 
-  async function confirmarGasto(gasto: { descripcion: string; monto: number; categoriaId: string }) {
+  async function confirmarGasto(gasto: {
+    descripcion: string;
+    monto: number;
+    categoriaId: string;
+    esPrivado: boolean;
+  }) {
     if (!householdId || !user) return;
     try {
+      if (gasto.esPrivado) {
+        await crearMovimientoPrivado(householdId, user.uid, {
+          tipo: "gasto",
+          descripcion: gasto.descripcion,
+          monto: gasto.monto,
+          fecha: new Date(),
+        });
+        mostrarToast(`"${gasto.descripcion}" cargado como gasto privado`);
+        return;
+      }
       await crearGasto(householdId, user.uid, {
         descripcion: gasto.descripcion,
         monto: gasto.monto,

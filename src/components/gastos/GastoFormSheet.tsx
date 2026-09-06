@@ -184,7 +184,7 @@ function GastoForm({
         >
           <span className="flex items-center gap-2 text-sm font-medium text-fg">
             <Lock size={15} className="text-fg-muted" aria-hidden="true" />
-            Gasto privado — no lo ve tu pareja, se descuenta solo de vos
+            Gasto privado
           </span>
           <span
             className={cn(
@@ -222,7 +222,7 @@ function GastoForm({
             onClick={() => setRepartoPersonalizado((v) => !v)}
             className="flex items-center justify-between text-left"
           >
-            <span className="text-sm font-medium text-fg">No fue 50/50 — poner cuánto puso cada uno</span>
+            <span className="text-sm font-medium text-fg">No fue 50/50</span>
             <span
               className={cn(
                 "h-6 w-11 shrink-0 rounded-full border transition-colors",
