@@ -41,4 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# python (skills con scripts .py, ej. ui-ux-pro-max)
+__pycache__/
+*.pyc
+
 .vercel
