@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, Lock, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useGastosDelMes } from "@/hooks/useGastosDelMes";
@@ -158,6 +158,15 @@ export default function ResumenPage() {
         uidActual={uidActual}
         mes={mes}
       />
+
+      <Link
+        href="/privado"
+        className="flex min-h-14 items-center gap-3 rounded-xl border border-border bg-bg-elevated px-4 py-3"
+      >
+        <Lock size={18} className="text-fg-muted" aria-hidden="true" />
+        <span className="flex-1 text-sm font-medium text-fg">Mis finanzas privadas</span>
+        <ChevronRight size={18} className="text-fg-muted" aria-hidden="true" />
+      </Link>
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">

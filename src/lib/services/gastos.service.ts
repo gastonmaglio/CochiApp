@@ -26,6 +26,22 @@ export interface DatosGasto {
   esRecurrente?: boolean;
   recurrenteId?: string | null;
   origenCompraCerradaId?: string | null;
+  division?: Record<string, number> | null;
+}
+
+/**
+ * Todos los gastos del hogar, sin filtrar por mes — hace falta para calcular el saldo
+ * personal de cada uno (ingresos privados menos su parte de TODOS los gastos compartidos
+ * de siempre, no solo los de este mes).
+ */
+export function escucharTodosLosGastos(
+  householdId: string,
+  callback: (gastos: Gasto[]) => void
+): () => void {
+  const q = query(collection(db, "households", householdId, "gastos"), orderBy("fecha", "desc"));
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Gasto, "id">) })));
+  });
 }
 
 export function escucharGastosDelMes(
@@ -59,6 +75,7 @@ export async function crearGasto(
     esRecurrente: datos.esRecurrente ?? false,
     recurrenteId: datos.recurrenteId ?? null,
     origenCompraCerradaId: datos.origenCompraCerradaId ?? null,
+    division: datos.division ?? null,
     creadoPor: uid,
     creadoEn: serverTimestamp(),
     actualizadoEn: serverTimestamp(),
@@ -82,6 +99,7 @@ export async function editarGasto(
     categoriaId: datos.categoriaId,
     fecha: datos.fecha,
     responsableUid: datos.responsableUid,
+    division: datos.division ?? null,
     actualizadoEn: serverTimestamp(),
   });
 }

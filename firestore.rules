@@ -86,12 +86,25 @@ service cloud.firestore {
 
       allow delete: if false;
 
+      // "finanzasPrivadas" queda afuera de estas dos reglas genéricas a propósito: tiene
+      // su propia regla más abajo, mucho más restrictiva (cada uno ve solo lo suyo). Sin
+      // este "coleccion != " acá, la regla genérica (que en Firestore se evalúa en OR con
+      // cualquier otra que también matchee el mismo path) igual dejaría entrar a la pareja.
       match /{coleccion}/{documentoId} {
-        allow read, write: if esMiembroDelHousehold(householdId);
+        allow read, write: if coleccion != "finanzasPrivadas" && esMiembroDelHousehold(householdId);
       }
 
       match /{coleccion}/{documentoId}/{subcoleccion}/{subdocumentoId} {
-        allow read, write: if esMiembroDelHousehold(householdId);
+        allow read, write: if coleccion != "finanzasPrivadas" && esMiembroDelHousehold(householdId);
+      }
+
+      // Ingresos y gastos privados: cada uno lee y escribe SOLO los propios (el uid en el
+      // path tiene que ser el mismo que el de quien pide). Ni siquiera un miembro real del
+      // hogar puede leer los del otro — esto es lo único de toda la app con esa barrera.
+      match /finanzasPrivadas/{uid}/movimientos/{movimientoId} {
+        allow read, write: if estaAutenticado()
+          && request.auth.uid == uid
+          && esMiembroDelHousehold(householdId);
       }
     }
   }

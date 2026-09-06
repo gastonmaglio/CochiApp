@@ -92,6 +92,7 @@ export default function GastosPage() {
         categoriaId: datos.categoriaId,
         fecha: Timestamp.fromDate(datos.fecha),
         responsableUid: datos.responsableUid,
+        division: datos.division,
       };
       if (gastoEditando) {
         await editarGasto(householdId, gastoEditando.id, payload);

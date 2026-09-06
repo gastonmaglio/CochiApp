@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { CategoriaSelector } from "@/components/listas/CategoriaSelector";
 import { ResponsableSelector } from "@/components/gastos/ResponsableSelector";
+import { cn } from "@/lib/utils/cn";
 import type { Categoria } from "@/types/household";
 import type { Gasto } from "@/types/gasto";
 import type { Usuario } from "@/types/usuario";
@@ -16,6 +17,7 @@ export interface DatosFormGasto {
   categoriaId: string;
   fecha: Date;
   responsableUid: string | null;
+  division: Record<string, number> | null;
 }
 
 interface GastoFormSheetProps {
@@ -80,6 +82,14 @@ function GastoForm({
     (gasto ? gasto.fecha.toDate() : new Date()).toISOString().slice(0, 10)
   );
   const [responsableUid, setResponsableUid] = useState<string | null>(gasto?.responsableUid ?? null);
+  const [repartoPersonalizado, setRepartoPersonalizado] = useState(Boolean(gasto?.division));
+  const otroUid = miembros.find((m) => m !== uidActual) ?? null;
+  const [miParte, setMiParte] = useState(() =>
+    gasto?.division?.[uidActual] != null ? String(gasto.division[uidActual]) : ""
+  );
+  const [suParte, setSuParte] = useState(() =>
+    otroUid && gasto?.division?.[otroUid] != null ? String(gasto.division[otroUid]) : ""
+  );
   const [error, setError] = useState<string | null>(null);
 
   function manejarSubmit(evento: FormEvent) {
@@ -97,12 +107,31 @@ function GastoForm({
       setError("Elegí una categoría.");
       return;
     }
+
+    let division: Record<string, number> | null = null;
+    if (responsableUid === null && repartoPersonalizado && otroUid) {
+      const miParteNum = Number(miParte.replace(",", "."));
+      const suParteNum = Number(suParte.replace(",", "."));
+      if (Number.isNaN(miParteNum) || Number.isNaN(suParteNum) || miParteNum < 0 || suParteNum < 0) {
+        setError("El reparto tiene que ser en números válidos.");
+        return;
+      }
+      if (Math.abs(miParteNum + suParteNum - montoNum) > 1) {
+        setError(
+          `Tu parte + la de tu pareja tiene que sumar el total (${(miParteNum + suParteNum).toFixed(0)} vs ${montoNum.toFixed(0)}).`
+        );
+        return;
+      }
+      division = { [uidActual]: miParteNum, [otroUid]: suParteNum };
+    }
+
     onGuardar({
       descripcion: descripcion.trim(),
       monto: montoNum,
       categoriaId,
       fecha: new Date(`${fecha}T12:00:00`),
       responsableUid,
+      division,
     });
   }
 
@@ -146,6 +175,54 @@ function GastoForm({
           onCambiar={setResponsableUid}
         />
       </div>
+      {responsableUid === null && otroUid && (
+        <div className="flex flex-col gap-2 rounded-xl border border-border p-3">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={repartoPersonalizado}
+            onClick={() => setRepartoPersonalizado((v) => !v)}
+            className="flex items-center justify-between text-left"
+          >
+            <span className="text-sm font-medium text-fg">No fue 50/50 — poner cuánto puso cada uno</span>
+            <span
+              className={cn(
+                "h-6 w-11 shrink-0 rounded-full border transition-colors",
+                repartoPersonalizado ? "border-primary bg-primary" : "border-border bg-bg"
+              )}
+            >
+              <span
+                className={cn(
+                  "block h-[18px] w-[18px] translate-y-px rounded-full bg-bg-elevated shadow transition-transform",
+                  repartoPersonalizado ? "translate-x-5" : "translate-x-0.5"
+                )}
+              />
+            </span>
+          </button>
+          {repartoPersonalizado && (
+            <div className="flex gap-2">
+              <Input
+                label="Tu parte"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.01"
+                value={miParte}
+                onChange={(e) => setMiParte(e.target.value)}
+              />
+              <Input
+                label="Su parte"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.01"
+                value={suParte}
+                onChange={(e) => setSuParte(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      )}
       {error && (
         <p role="alert" className="text-sm text-danger">
           {error}

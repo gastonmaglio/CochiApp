@@ -18,6 +18,7 @@ const RUTAS_SIN_CHROME = [
   /^\/listas\/[^/]+$/,
   /^\/hogar$/,
   /^\/hogar\/categorias$/,
+  /^\/privado$/,
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
