@@ -29,6 +29,14 @@ export function ServiceWorkerRegister() {
             registration.update().catch(() => {});
           }
         });
+        // Además, un chequeo periódico — si alguien deja la pestaña abierta y AL FRENTE
+        // sin minimizarla nunca (nunca dispara visibilitychange), puede quedarse corriendo
+        // código viejo contra un backend que ya cambió de forma. Pasó de verdad una vez.
+        // Este componente vive toda la sesión de la app, así que no hace falta limpiar el
+        // intervalo — no hay un "desmontaje" real antes de cerrar la pestaña.
+        setInterval(() => {
+          registration.update().catch(() => {});
+        }, 20 * 60 * 1000);
       })
       .catch((error: unknown) => {
         console.error("No se pudo registrar el service worker", error);
