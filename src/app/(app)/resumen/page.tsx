@@ -2,13 +2,16 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Lock, Sparkles } from "lucide-react";
+import { ChevronRight, Lock, PiggyBank, Plus, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useGastosDelMes } from "@/hooks/useGastosDelMes";
 import { useEvolucionMensual } from "@/hooks/useEvolucionMensual";
 import { useComprasCerradas } from "@/hooks/useComprasCerradas";
 import { useMiembrosHousehold } from "@/hooks/useMiembrosHousehold";
+import { useFondosCompartidos } from "@/hooks/useFondosAhorro";
+import { crearFondo, editarFondo, eliminarFondo } from "@/lib/services/fondosAhorro.service";
+import { useToast } from "@/contexts/ToastContext";
 import { inicioDeMes, inicioDeMesSiguiente, formatearMes } from "@/lib/utils/fechas";
 import { formatearMonto } from "@/lib/utils/moneda";
 import { useContadorAnimado } from "@/hooks/useContadorAnimado";
@@ -28,8 +31,13 @@ import { PresupuestoBarra } from "@/components/resumen/PresupuestoBarra";
 import { ExportarCsvButton } from "@/components/resumen/ExportarCsvButton";
 import { CompraCerradaCard } from "@/components/historial/CompraCerradaCard";
 import { CompraCerradaDetalleSheet } from "@/components/historial/CompraCerradaDetalleSheet";
+import { FondoAhorroCard } from "@/components/ahorro/FondoAhorroCard";
+import { FondoAhorroFormSheet, type DatosFormFondo } from "@/components/ahorro/FondoAhorroFormSheet";
+import { FondoAhorroDetalleSheet } from "@/components/ahorro/FondoAhorroDetalleSheet";
 import { EstadoVacio } from "@/components/ui/EstadoVacio";
+import { mensajeErrorFirebase } from "@/lib/utils/errores";
 import type { CompraCerrada } from "@/types/compraCerrada";
+import type { FondoAhorro } from "@/types/fondoAhorro";
 
 export default function ResumenPage() {
   const { user, household } = useAuth();
@@ -60,8 +68,54 @@ export default function ResumenPage() {
   const { categorias } = useCategorias(householdId, "categoriasGastos");
   const { puntos: evolucion, cargando: cargandoEvolucion } = useEvolucionMensual(householdId, mes);
   const { compras, cargando: cargandoCompras } = useComprasCerradas(householdId);
+  const { fondos, cargando: cargandoFondos } = useFondosCompartidos(householdId);
+  const { mostrarToast } = useToast();
 
   const [compraSeleccionada, setCompraSeleccionada] = useState<CompraCerrada | null>(null);
+  const [fondoAbierto, setFondoAbierto] = useState<FondoAhorro | null>(null);
+  const [sheetFondoFormAbierto, setSheetFondoFormAbierto] = useState(false);
+  const [fondoEditando, setFondoEditando] = useState<FondoAhorro | null>(null);
+  const [guardandoFondo, setGuardandoFondo] = useState(false);
+
+  function abrirNuevoFondo() {
+    setFondoEditando(null);
+    setSheetFondoFormAbierto(true);
+  }
+
+  function abrirEditarFondo(fondo: FondoAhorro) {
+    setFondoEditando(fondo);
+    setFondoAbierto(null);
+    setSheetFondoFormAbierto(true);
+  }
+
+  async function manejarGuardarFondo(datos: DatosFormFondo) {
+    if (!householdId || !user) return;
+    setGuardandoFondo(true);
+    try {
+      if (fondoEditando) {
+        await editarFondo(householdId, user.uid, fondoEditando, datos);
+      } else {
+        await crearFondo(householdId, user.uid, { ...datos, tipo: "compartido" });
+      }
+      setSheetFondoFormAbierto(false);
+      setFondoEditando(null);
+    } catch (err) {
+      mostrarToast(mensajeErrorFirebase(err));
+    } finally {
+      setGuardandoFondo(false);
+    }
+  }
+
+  async function manejarBorrarFondo() {
+    if (!householdId || !user || !fondoEditando) return;
+    try {
+      await eliminarFondo(householdId, user.uid, fondoEditando);
+      setSheetFondoFormAbierto(false);
+      setFondoEditando(null);
+    } catch (err) {
+      mostrarToast(mensajeErrorFirebase(err));
+    }
+  }
 
   const total = useMemo(() => totalGeneral(gastos), [gastos]);
   const totalAnimado = useContadorAnimado(total);
@@ -125,6 +179,39 @@ export default function ResumenPage() {
           totales={porPersona}
         />
       )}
+
+      <section className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-fg-muted">
+            <PiggyBank size={14} aria-hidden="true" /> Ahorro de pareja
+          </h2>
+          <button
+            type="button"
+            onClick={abrirNuevoFondo}
+            className="flex min-h-9 items-center gap-1 text-sm font-medium text-primary"
+          >
+            <Plus size={16} aria-hidden="true" /> Nuevo
+          </button>
+        </div>
+        {cargandoFondos ? (
+          <div className="h-24 animate-pulse rounded-xl bg-bg-elevated" />
+        ) : fondos.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-fg-muted">
+            Creá un fondo para ahorrar juntos — cada uno ve el total y lo que puso, no lo que puso el otro.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {fondos.map((fondo) => (
+              <FondoAhorroCard
+                key={fondo.id}
+                fondo={fondo}
+                householdId={householdId ?? ""}
+                onAbrir={() => setFondoAbierto(fondo)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated p-4 shadow-card">
         <h2 className="text-sm font-semibold text-fg-muted">Por categoría</h2>
@@ -198,6 +285,29 @@ export default function ResumenPage() {
       </section>
 
       <CompraCerradaDetalleSheet compra={compraSeleccionada} onCerrar={() => setCompraSeleccionada(null)} />
+
+      <FondoAhorroFormSheet
+        abierto={sheetFondoFormAbierto}
+        fondo={fondoEditando}
+        titulo={fondoEditando ? "Editar fondo" : "Nuevo fondo compartido"}
+        cargando={guardandoFondo}
+        onCerrar={() => {
+          setSheetFondoFormAbierto(false);
+          setFondoEditando(null);
+        }}
+        onGuardar={manejarGuardarFondo}
+        onBorrar={fondoEditando ? manejarBorrarFondo : undefined}
+      />
+
+      {householdId && (
+        <FondoAhorroDetalleSheet
+          abierto={fondoAbierto !== null}
+          fondo={fondoAbierto}
+          householdId={householdId}
+          onCerrar={() => setFondoAbierto(null)}
+          onEditar={() => fondoAbierto && abrirEditarFondo(fondoAbierto)}
+        />
+      )}
     </main>
   );
 }

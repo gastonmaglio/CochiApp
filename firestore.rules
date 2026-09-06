@@ -86,22 +86,43 @@ service cloud.firestore {
 
       allow delete: if false;
 
-      // "finanzasPrivadas" queda afuera de estas dos reglas genéricas a propósito: tiene
-      // su propia regla más abajo, mucho más restrictiva (cada uno ve solo lo suyo). Sin
-      // este "coleccion != " acá, la regla genérica (que en Firestore se evalúa en OR con
-      // cualquier otra que también matchee el mismo path) igual dejaría entrar a la pareja.
+      // "finanzasPrivadas" y "aportesFondo" quedan afuera de estas dos reglas genéricas a
+      // propósito: tienen su propia regla más abajo, mucho más restrictiva (cada uno ve solo
+      // lo suyo). Sin este "coleccion != " acá, la regla genérica (que en Firestore se evalúa
+      // en OR con cualquier otra que también matchee el mismo path) igual dejaría entrar a
+      // la pareja. "fondosAhorro" (la metadata del fondo compartido: nombre, meta, total) SÍ
+      // queda en la genérica a propósito — los dos integrantes tienen que poder verla y
+      // editarla, es lo único compartido de un fondo de ahorro.
       match /{coleccion}/{documentoId} {
-        allow read, write: if coleccion != "finanzasPrivadas" && esMiembroDelHousehold(householdId);
+        allow read, write: if coleccion != "finanzasPrivadas" && coleccion != "aportesFondo" && esMiembroDelHousehold(householdId);
       }
 
       match /{coleccion}/{documentoId}/{subcoleccion}/{subdocumentoId} {
-        allow read, write: if coleccion != "finanzasPrivadas" && esMiembroDelHousehold(householdId);
+        allow read, write: if coleccion != "finanzasPrivadas" && coleccion != "aportesFondo" && esMiembroDelHousehold(householdId);
       }
 
       // Ingresos y gastos privados: cada uno lee y escribe SOLO los propios (el uid en el
       // path tiene que ser el mismo que el de quien pide). Ni siquiera un miembro real del
       // hogar puede leer los del otro — esto es lo único de toda la app con esa barrera.
       match /finanzasPrivadas/{uid}/movimientos/{movimientoId} {
+        allow read, write: if estaAutenticado()
+          && request.auth.uid == uid
+          && esMiembroDelHousehold(householdId);
+      }
+
+      // Fondos de ahorro personales (metadata: nombre, meta, total) — misma barrera que
+      // finanzasPrivadas: ni la pareja ve que un fondo personal existe.
+      match /finanzasPrivadas/{uid}/fondosAhorro/{fondoId} {
+        allow read, write: if estaAutenticado()
+          && request.auth.uid == uid
+          && esMiembroDelHousehold(householdId);
+      }
+
+      // Aportes a fondos de ahorro (tanto personales como compartidos): cada aporte puntual
+      // (monto, fecha, descripción) lo ve solo quien lo cargó — el total agregado del fondo
+      // compartido sí es visible para los dos (vive en fondosAhorro/{fondoId}.total), pero
+      // el detalle de "quién puso cuánto" no.
+      match /aportesFondo/{uid}/movimientos/{movimientoId} {
         allow read, write: if estaAutenticado()
           && request.auth.uid == uid
           && esMiembroDelHousehold(householdId);

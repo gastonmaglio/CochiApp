@@ -2,15 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, TrendingDown, TrendingUp, Trash2, Lock } from "lucide-react";
+import { ArrowLeft, PiggyBank, Plus, TrendingDown, TrendingUp, Trash2, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMovimientosPrivados } from "@/hooks/useMovimientosPrivados";
 import { useTodosLosGastos } from "@/hooks/useTodosLosGastos";
+import { useFondosPersonales } from "@/hooks/useFondosAhorro";
 import { useToast } from "@/contexts/ToastContext";
 import {
   crearMovimientoPrivado,
   eliminarMovimientoPrivado,
 } from "@/lib/services/finanzasPrivadas.service";
+import { crearFondo, editarFondo, eliminarFondo } from "@/lib/services/fondosAhorro.service";
 import { calcularSaldoPersonal } from "@/lib/utils/saldoPersonal";
 import { formatearMonto } from "@/lib/utils/moneda";
 import { useContadorAnimado } from "@/hooks/useContadorAnimado";
@@ -20,9 +22,13 @@ import {
   MovimientoPrivadoFormSheet,
   type DatosMovimientoPrivado,
 } from "@/components/privado/MovimientoPrivadoFormSheet";
+import { FondoAhorroCard } from "@/components/ahorro/FondoAhorroCard";
+import { FondoAhorroFormSheet, type DatosFormFondo } from "@/components/ahorro/FondoAhorroFormSheet";
+import { FondoAhorroDetalleSheet } from "@/components/ahorro/FondoAhorroDetalleSheet";
 import { EstadoVacio } from "@/components/ui/EstadoVacio";
 import { cn } from "@/lib/utils/cn";
 import type { TipoMovimientoPrivado } from "@/types/movimientoPrivado";
+import type { FondoAhorro } from "@/types/fondoAhorro";
 
 export default function PrivadoPage() {
   const router = useRouter();
@@ -33,9 +39,54 @@ export default function PrivadoPage() {
 
   const { movimientos, cargando: cargandoMovimientos } = useMovimientosPrivados(householdId, uid);
   const { gastos: gastosCompartidos, cargando: cargandoGastos } = useTodosLosGastos(householdId);
+  const { fondos, cargando: cargandoFondos } = useFondosPersonales(householdId, uid);
 
   const [sheetTipo, setSheetTipo] = useState<TipoMovimientoPrivado | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [fondoAbierto, setFondoAbierto] = useState<FondoAhorro | null>(null);
+  const [sheetFondoFormAbierto, setSheetFondoFormAbierto] = useState(false);
+  const [fondoEditando, setFondoEditando] = useState<FondoAhorro | null>(null);
+  const [guardandoFondo, setGuardandoFondo] = useState(false);
+
+  function abrirNuevoFondo() {
+    setFondoEditando(null);
+    setSheetFondoFormAbierto(true);
+  }
+
+  function abrirEditarFondo(fondo: FondoAhorro) {
+    setFondoEditando(fondo);
+    setFondoAbierto(null);
+    setSheetFondoFormAbierto(true);
+  }
+
+  async function manejarGuardarFondo(datos: DatosFormFondo) {
+    if (!householdId || !uid) return;
+    setGuardandoFondo(true);
+    try {
+      if (fondoEditando) {
+        await editarFondo(householdId, uid, fondoEditando, datos);
+      } else {
+        await crearFondo(householdId, uid, { ...datos, tipo: "personal" });
+      }
+      setSheetFondoFormAbierto(false);
+      setFondoEditando(null);
+    } catch (err) {
+      mostrarToast(mensajeErrorFirebase(err));
+    } finally {
+      setGuardandoFondo(false);
+    }
+  }
+
+  async function manejarBorrarFondo() {
+    if (!householdId || !uid || !fondoEditando) return;
+    try {
+      await eliminarFondo(householdId, uid, fondoEditando);
+      setSheetFondoFormAbierto(false);
+      setFondoEditando(null);
+    } catch (err) {
+      mostrarToast(mensajeErrorFirebase(err));
+    }
+  }
 
   const saldo = useMemo(
     () => (uid ? calcularSaldoPersonal(movimientos, gastosCompartidos, uid) : null),
@@ -126,6 +177,39 @@ export default function PrivadoPage() {
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-1.5 text-sm font-semibold text-fg-muted">
+              <PiggyBank size={14} aria-hidden="true" /> Mis ahorros
+            </h2>
+            <button
+              type="button"
+              onClick={abrirNuevoFondo}
+              className="flex min-h-9 items-center gap-1 text-sm font-medium text-primary"
+            >
+              <Plus size={16} aria-hidden="true" /> Nuevo
+            </button>
+          </div>
+          {cargandoFondos ? (
+            <div className="h-24 animate-pulse rounded-xl bg-bg-elevated" />
+          ) : fondos.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-fg-muted">
+              Creá un fondo para ahorrar algo tuyo — nadie más lo ve.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {fondos.map((fondo) => (
+                <FondoAhorroCard
+                  key={fondo.id}
+                  fondo={fondo}
+                  householdId={householdId ?? ""}
+                  onAbrir={() => setFondoAbierto(fondo)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-fg-muted">
               <TrendingUp size={14} aria-hidden="true" /> Ingresos
             </h2>
             <button
@@ -174,6 +258,29 @@ export default function PrivadoPage() {
         onCerrar={() => setSheetTipo(null)}
         onGuardar={manejarGuardar}
       />
+
+      <FondoAhorroFormSheet
+        abierto={sheetFondoFormAbierto}
+        fondo={fondoEditando}
+        titulo={fondoEditando ? "Editar fondo" : "Nuevo fondo personal"}
+        cargando={guardandoFondo}
+        onCerrar={() => {
+          setSheetFondoFormAbierto(false);
+          setFondoEditando(null);
+        }}
+        onGuardar={manejarGuardarFondo}
+        onBorrar={fondoEditando ? manejarBorrarFondo : undefined}
+      />
+
+      {householdId && (
+        <FondoAhorroDetalleSheet
+          abierto={fondoAbierto !== null}
+          fondo={fondoAbierto}
+          householdId={householdId}
+          onCerrar={() => setFondoAbierto(null)}
+          onEditar={() => fondoAbierto && abrirEditarFondo(fondoAbierto)}
+        />
+      )}
     </main>
   );
 }
