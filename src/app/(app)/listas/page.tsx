@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { History, Mic, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useListas } from "@/hooks/useListas";
@@ -22,6 +23,7 @@ import { EstadoVacio } from "@/components/ui/EstadoVacio";
 import type { Lista } from "@/types/lista";
 
 export default function ListasPage() {
+  const router = useRouter();
   const { user, household } = useAuth();
   const { listas, cargando } = useListas(household?.id);
   const { categorias: categoriasCompras } = useCategorias(household?.id, "categoriasCompras");
@@ -36,8 +38,9 @@ export default function ListasPage() {
     if (!user || !household) return;
     setCreando(true);
     try {
-      await crearLista(household.id, user.uid, nombre);
+      const listaId = await crearLista(household.id, user.uid, nombre);
       setSheetAbierto(false);
+      router.push(`/listas/${listaId}`);
     } catch (err) {
       mostrarToast(mensajeErrorFirebase(err));
     } finally {
