@@ -97,7 +97,7 @@ icono_any = Image.new("RGBA", (S, S), (0, 0, 0, 0))
 from PIL import ImageDraw
 draw = ImageDraw.Draw(icono_any)
 draw.rounded_rectangle([0, 0, S, S], radius=int(S * 0.22), fill=COLOR_FONDO_ICONO)
-capybara_para_icono = mascota_transparente.resize((int(S * 0.86), int(S * 0.86)), Image.LANCZOS)
+capybara_para_icono = mascota_transparente.resize((int(S * 0.97), int(S * 0.97)), Image.LANCZOS)
 offset = ((S - capybara_para_icono.width) // 2, (S - capybara_para_icono.height) // 2)
 icono_any.paste(capybara_para_icono, offset, capybara_para_icono)
 
@@ -107,7 +107,7 @@ print("OK: icons/icon-*.png")
 
 # --- Iconos "maskable": full-bleed, con mas margen de seguridad para el recorte de Android ---
 icono_maskable = Image.new("RGBA", (S, S), COLOR_FONDO_ICONO + (255,))
-capybara_chica = mascota_transparente.resize((int(S * 0.68), int(S * 0.68)), Image.LANCZOS)
+capybara_chica = mascota_transparente.resize((int(S * 0.82), int(S * 0.82)), Image.LANCZOS)
 offset_m = ((S - capybara_chica.width) // 2, (S - capybara_chica.height) // 2)
 icono_maskable.paste(capybara_chica, offset_m, capybara_chica)
 for tam in (192, 512):

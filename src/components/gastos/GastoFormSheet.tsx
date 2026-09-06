@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Lock } from "lucide-react";
 import { CategoriaSelector } from "@/components/listas/CategoriaSelector";
 import { ResponsableSelector } from "@/components/gastos/ResponsableSelector";
 import { cn } from "@/lib/utils/cn";
@@ -18,6 +19,10 @@ export interface DatosFormGasto {
   fecha: Date;
   responsableUid: string | null;
   division: Record<string, number> | null;
+  // Si es true, no se guarda en los gastos del hogar — se descuenta directo de "Mis
+  // finanzas privadas" y la pareja nunca lo ve. Solo aplica al crear (no al editar un
+  // gasto compartido ya existente).
+  esPrivado: boolean;
 }
 
 interface GastoFormSheetProps {
@@ -82,6 +87,7 @@ function GastoForm({
     (gasto ? gasto.fecha.toDate() : new Date()).toISOString().slice(0, 10)
   );
   const [responsableUid, setResponsableUid] = useState<string | null>(gasto?.responsableUid ?? null);
+  const [esPrivado, setEsPrivado] = useState(false);
   const [repartoPersonalizado, setRepartoPersonalizado] = useState(Boolean(gasto?.division));
   const otroUid = miembros.find((m) => m !== uidActual) ?? null;
   const [miParte, setMiParte] = useState(() =>
@@ -109,7 +115,7 @@ function GastoForm({
     }
 
     let division: Record<string, number> | null = null;
-    if (responsableUid === null && repartoPersonalizado && otroUid) {
+    if (!esPrivado && responsableUid === null && repartoPersonalizado && otroUid) {
       const miParteNum = Number(miParte.replace(",", "."));
       const suParteNum = Number(suParte.replace(",", "."));
       if (Number.isNaN(miParteNum) || Number.isNaN(suParteNum) || miParteNum < 0 || suParteNum < 0) {
@@ -132,6 +138,7 @@ function GastoForm({
       fecha: new Date(`${fecha}T12:00:00`),
       responsableUid,
       division,
+      esPrivado,
     });
   }
 
@@ -154,10 +161,12 @@ function GastoForm({
         onChange={(e) => setMonto(e.target.value)}
         required
       />
-      <div>
-        <p className="mb-1.5 text-sm font-medium text-fg-muted">Categoría</p>
-        <CategoriaSelector categorias={categorias} valor={categoriaId} onCambiar={setCategoriaId} />
-      </div>
+      {!esPrivado && (
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-fg-muted">Categoría</p>
+          <CategoriaSelector categorias={categorias} valor={categoriaId} onCambiar={setCategoriaId} />
+        </div>
+      )}
       <Input
         label="Fecha"
         type="date"
@@ -165,17 +174,46 @@ function GastoForm({
         onChange={(e) => setFecha(e.target.value)}
         required
       />
-      <div>
-        <p className="mb-1.5 text-sm font-medium text-fg-muted">¿De quién es?</p>
-        <ResponsableSelector
-          miembros={miembros}
-          usuarios={usuarios}
-          uidActual={uidActual}
-          valor={responsableUid}
-          onCambiar={setResponsableUid}
-        />
-      </div>
-      {responsableUid === null && otroUid && (
+      {!gasto && (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={esPrivado}
+          onClick={() => setEsPrivado((v) => !v)}
+          className="flex items-center justify-between rounded-xl border border-border p-3 text-left"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium text-fg">
+            <Lock size={15} className="text-fg-muted" aria-hidden="true" />
+            Gasto privado — no lo ve tu pareja, se descuenta solo de vos
+          </span>
+          <span
+            className={cn(
+              "h-6 w-11 shrink-0 rounded-full border transition-colors",
+              esPrivado ? "border-primary bg-primary" : "border-border bg-bg"
+            )}
+          >
+            <span
+              className={cn(
+                "block h-[18px] w-[18px] translate-y-px rounded-full bg-bg-elevated shadow transition-transform",
+                esPrivado ? "translate-x-5" : "translate-x-0.5"
+              )}
+            />
+          </span>
+        </button>
+      )}
+      {!esPrivado && (
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-fg-muted">¿De quién es?</p>
+          <ResponsableSelector
+            miembros={miembros}
+            usuarios={usuarios}
+            uidActual={uidActual}
+            valor={responsableUid}
+            onCambiar={setResponsableUid}
+          />
+        </div>
+      )}
+      {!esPrivado && responsableUid === null && otroUid && (
         <div className="flex flex-col gap-2 rounded-xl border border-border p-3">
           <button
             type="button"
@@ -201,24 +239,30 @@ function GastoForm({
           </button>
           {repartoPersonalizado && (
             <div className="flex gap-2">
-              <Input
-                label="Tu parte"
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step="0.01"
-                value={miParte}
-                onChange={(e) => setMiParte(e.target.value)}
-              />
-              <Input
-                label="Su parte"
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step="0.01"
-                value={suParte}
-                onChange={(e) => setSuParte(e.target.value)}
-              />
+              <div className="flex-1">
+                <Input
+                  label="Tu parte"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.01"
+                  value={miParte}
+                  onChange={(e) => setMiParte(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex-1">
+                <Input
+                  label="Su parte"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.01"
+                  value={suParte}
+                  onChange={(e) => setSuParte(e.target.value)}
+                  className="w-full"
+                />
+              </div>
             </div>
           )}
         </div>

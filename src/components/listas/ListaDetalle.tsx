@@ -23,12 +23,13 @@ import { renombrarLista } from "@/lib/services/listas.service";
 import { obtenerCategoriaHistorica } from "@/lib/services/itemsFrecuentes.service";
 import { cerrarLista, type ModoCierre } from "@/lib/services/comprasCerradas.service";
 import { crearGasto } from "@/lib/services/gastos.service";
+import { crearTarea } from "@/lib/services/tareas.service";
 import { agruparItemsPorCategoria } from "@/lib/utils/agruparItems";
 import { cn } from "@/lib/utils/cn";
 import { formatearMonto } from "@/lib/utils/moneda";
 import { mensajeErrorFirebase } from "@/lib/utils/errores";
 import { AgregarItemBar } from "@/components/listas/AgregarItemBar";
-import { GrabarVozSheet } from "@/components/listas/GrabarVozSheet";
+import { GrabarVozSheet } from "@/components/voz/GrabarVozSheet";
 import { ItemRow } from "@/components/listas/ItemRow";
 import { ItemsFrecuentesRow } from "@/components/listas/ItemsFrecuentesRow";
 import { EditarItemSheet } from "@/components/listas/EditarItemSheet";
@@ -121,6 +122,7 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
   }
 
   async function manejarConfirmarListaVoz(
+    _nombreLista: string | null,
     itemsVoz: { nombre: string; cantidad: string | null; categoriaId: string }[]
   ) {
     if (!user || !householdId) return;
@@ -160,6 +162,24 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
         responsableUid: null,
       });
       mostrarToast(`Gasto "${gastoVoz.descripcion}" cargado`);
+    } catch (err) {
+      mostrarToast(mensajeErrorFirebase(err));
+    }
+  }
+
+  async function manejarConfirmarTareaVoz(tareaVoz: { titulo: string; fechaVencimiento: Date | null }) {
+    if (!user || !householdId) return;
+    try {
+      await crearTarea(householdId, user.uid, {
+        titulo: tareaVoz.titulo,
+        descripcion: null,
+        fechaVencimiento: tareaVoz.fechaVencimiento,
+        asignadaA: null,
+        repetir: null,
+        prioridad: null,
+        subtareas: [],
+      });
+      mostrarToast(`Tarea "${tareaVoz.titulo}" creada`);
     } catch (err) {
       mostrarToast(mensajeErrorFirebase(err));
     }
@@ -507,9 +527,12 @@ export function ListaDetalle({ listaId }: ListaDetalleProps) {
           householdId={householdId}
           categoriasCompras={categoriasCompras}
           categoriasGastos={categoriasGasto}
+          modoLista="agregar"
+          nombreListaActual={lista.nombre}
           onCerrar={() => setSheetVozAbierto(false)}
           onConfirmarLista={manejarConfirmarListaVoz}
           onConfirmarGasto={manejarConfirmarGastoVoz}
+          onConfirmarTarea={manejarConfirmarTareaVoz}
         />
       )}
     </div>

@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { History, Plus } from "lucide-react";
+import { History, Mic, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useListas } from "@/hooks/useListas";
+import { useCategorias } from "@/hooks/useCategorias";
+import { useAccionesVoz } from "@/hooks/useAccionesVoz";
 import { useToast } from "@/contexts/ToastContext";
 import {
   crearLista,
@@ -14,6 +16,7 @@ import {
 import { mensajeErrorFirebase } from "@/lib/utils/errores";
 import { ListaCard } from "@/components/listas/ListaCard";
 import { ListaFormSheet } from "@/components/listas/ListaFormSheet";
+import { GrabarVozSheet } from "@/components/voz/GrabarVozSheet";
 import { Button } from "@/components/ui/Button";
 import { EstadoVacio } from "@/components/ui/EstadoVacio";
 import type { Lista } from "@/types/lista";
@@ -21,8 +24,12 @@ import type { Lista } from "@/types/lista";
 export default function ListasPage() {
   const { user, household } = useAuth();
   const { listas, cargando } = useListas(household?.id);
+  const { categorias: categoriasCompras } = useCategorias(household?.id, "categoriasCompras");
+  const { categorias: categoriasGastos } = useCategorias(household?.id, "categoriasGastos");
+  const acciones = useAccionesVoz(household?.id, user);
   const { mostrarToast } = useToast();
   const [sheetAbierto, setSheetAbierto] = useState(false);
+  const [sheetVozAbierto, setSheetVozAbierto] = useState(false);
   const [creando, setCreando] = useState(false);
 
   async function manejarCrear(nombre: string) {
@@ -73,6 +80,14 @@ export default function ListasPage() {
         </div>
       </div>
 
+      <button
+        type="button"
+        onClick={() => setSheetVozAbierto(true)}
+        className="flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 text-sm font-medium text-primary active:bg-primary-soft"
+      >
+        <Mic size={18} aria-hidden="true" /> Crear lista por voz
+      </button>
+
       {cargando ? (
         <div className="flex flex-col gap-3" aria-hidden="true">
           {[0, 1, 2].map((i) => (
@@ -99,6 +114,23 @@ export default function ListasPage() {
         onCerrar={() => setSheetAbierto(false)}
         onGuardar={manejarCrear}
       />
+
+      {user && household && (
+        <GrabarVozSheet
+          abierto={sheetVozAbierto}
+          user={user}
+          householdId={household.id}
+          categoriasCompras={categoriasCompras}
+          categoriasGastos={categoriasGastos}
+          modoLista="crear"
+          onCerrar={() => setSheetVozAbierto(false)}
+          onConfirmarLista={(nombreLista, items) =>
+            acciones.confirmarLista(nombreLista ?? "Lista de compras", items)
+          }
+          onConfirmarGasto={acciones.confirmarGasto}
+          onConfirmarTarea={acciones.confirmarTarea}
+        />
+      )}
     </main>
   );
 }

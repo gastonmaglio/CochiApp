@@ -12,9 +12,15 @@ export interface GastoExtraidoPorVoz {
   categoria: string;
 }
 
+export interface TareaExtraidaPorVoz {
+  titulo: string;
+  fechaVencimiento: string | null;
+}
+
 export type ContenidoExtraidoPorVoz =
-  | { tipo: "lista"; items: ItemExtraidoPorVoz[] }
-  | { tipo: "gasto"; gasto: GastoExtraidoPorVoz };
+  | { tipo: "lista"; nombreLista: string; items: ItemExtraidoPorVoz[] }
+  | { tipo: "gasto"; gasto: GastoExtraidoPorVoz }
+  | { tipo: "tarea"; tarea: TareaExtraidaPorVoz };
 
 export class ErrorVoz extends Error {}
 
@@ -46,5 +52,8 @@ export async function procesarAudioVoz(
   if (datos.tipo === "gasto") {
     return { tipo: "gasto", gasto: datos.gasto };
   }
-  return { tipo: "lista", items: datos.items ?? [] };
+  if (datos.tipo === "tarea") {
+    return { tipo: "tarea", tarea: datos.tarea };
+  }
+  return { tipo: "lista", nombreLista: datos.nombreLista ?? "Lista de compras", items: datos.items ?? [] };
 }

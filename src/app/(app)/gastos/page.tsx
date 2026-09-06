@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Timestamp } from "firebase/firestore";
-import { Plus } from "lucide-react";
+import { Mic, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategorias } from "@/hooks/useCategorias";
 import { useGastosDelMes } from "@/hooks/useGastosDelMes";
 import { useGastosRecurrentes } from "@/hooks/useGastosRecurrentes";
 import { useMiembrosHousehold } from "@/hooks/useMiembrosHousehold";
+import { useAccionesVoz } from "@/hooks/useAccionesVoz";
 import { useToast } from "@/contexts/ToastContext";
 import {
   crearGasto,
@@ -15,6 +16,7 @@ import {
   eliminarGasto,
   restaurarGasto,
 } from "@/lib/services/gastos.service";
+import { crearMovimientoPrivado } from "@/lib/services/finanzasPrivadas.service";
 import {
   alternarActivoGastoRecurrente,
   crearGastoRecurrente,
@@ -31,6 +33,7 @@ import { GastoRow } from "@/components/gastos/GastoRow";
 import { GastoFormSheet, type DatosFormGasto } from "@/components/gastos/GastoFormSheet";
 import { GastoRecurrenteRow } from "@/components/gastos/GastoRecurrenteRow";
 import { GastoRecurrenteFormSheet } from "@/components/gastos/GastoRecurrenteFormSheet";
+import { GrabarVozSheet } from "@/components/voz/GrabarVozSheet";
 import { EstadoVacio } from "@/components/ui/EstadoVacio";
 import type { Gasto } from "@/types/gasto";
 import type { GastoRecurrente } from "@/types/gastoRecurrente";
@@ -48,12 +51,15 @@ export default function GastosPage() {
 
   const { gastos, cargando: cargandoGastos } = useGastosDelMes(householdId, inicio, fin);
   const { categorias, cargando: cargandoCategorias } = useCategorias(householdId, "categoriasGastos");
+  const { categorias: categoriasCompras } = useCategorias(householdId, "categoriasCompras");
   const { recurrentes } = useGastosRecurrentes(householdId);
+  const acciones = useAccionesVoz(householdId, user);
 
   const [sheetGastoAbierto, setSheetGastoAbierto] = useState(false);
   const [gastoEditando, setGastoEditando] = useState<Gasto | null>(null);
   const [sheetRecurrenteAbierto, setSheetRecurrenteAbierto] = useState(false);
   const [recurrenteEditando, setRecurrenteEditando] = useState<GastoRecurrente | null>(null);
+  const [sheetVozAbierto, setSheetVozAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const { mostrarToast } = useToast();
 
@@ -86,6 +92,17 @@ export default function GastosPage() {
     if (!householdId || !user) return;
     setGuardando(true);
     try {
+      if (datos.esPrivado) {
+        await crearMovimientoPrivado(householdId, user.uid, {
+          tipo: "gasto",
+          descripcion: datos.descripcion,
+          monto: datos.monto,
+          fecha: datos.fecha,
+        });
+        mostrarToast(`"${datos.descripcion}" cargado como gasto privado`);
+        cerrarSheetGasto();
+        return;
+      }
       const payload = {
         descripcion: datos.descripcion,
         monto: datos.monto,
@@ -180,6 +197,14 @@ export default function GastosPage() {
         <p className="text-center text-2xl font-semibold text-fg">{formatearMonto(totalMes)}</p>
       </div>
 
+      <button
+        type="button"
+        onClick={() => setSheetVozAbierto(true)}
+        className="flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 text-sm font-medium text-primary active:bg-primary-soft"
+      >
+        <Mic size={18} aria-hidden="true" /> Cargar gasto por voz
+      </button>
+
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold text-fg-muted">Gastos del mes</h2>
         {cargando ? (
@@ -273,6 +298,23 @@ export default function GastosPage() {
         onGuardar={manejarGuardarRecurrente}
         onBorrar={recurrenteEditando ? manejarBorrarRecurrente : undefined}
       />
+
+      {user && householdId && (
+        <GrabarVozSheet
+          abierto={sheetVozAbierto}
+          user={user}
+          householdId={householdId}
+          categoriasCompras={categoriasCompras}
+          categoriasGastos={categorias}
+          modoLista="crear"
+          onCerrar={() => setSheetVozAbierto(false)}
+          onConfirmarLista={(nombreLista, items) =>
+            acciones.confirmarLista(nombreLista ?? "Lista de compras", items)
+          }
+          onConfirmarGasto={acciones.confirmarGasto}
+          onConfirmarTarea={acciones.confirmarTarea}
+        />
+      )}
     </main>
   );
 }

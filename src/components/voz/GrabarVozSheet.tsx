@@ -29,15 +29,30 @@ interface GastoRevision {
   categoriaId: string;
 }
 
+interface TareaRevision {
+  titulo: string;
+  fechaVencimiento: string;
+}
+
 interface GrabarVozSheetProps {
   abierto: boolean;
   user: User;
   householdId: string;
   categoriasCompras: Categoria[];
   categoriasGastos: Categoria[];
+  // "crear" (default): una lista dictada arma una lista NUEVA con nombre propio — para
+  // usar desde la pantalla de Listas. "agregar": los items se suman a una lista que ya
+  // está abierta (nombreListaActual se usa solo para el texto) — para usar desde adentro
+  // del detalle de una lista puntual.
+  modoLista?: "crear" | "agregar";
+  nombreListaActual?: string;
   onCerrar: () => void;
-  onConfirmarLista: (items: { nombre: string; cantidad: string | null; categoriaId: string }[]) => void;
+  onConfirmarLista: (
+    nombreLista: string | null,
+    items: { nombre: string; cantidad: string | null; categoriaId: string }[]
+  ) => void;
   onConfirmarGasto: (gasto: { descripcion: string; monto: number; categoriaId: string }) => void;
+  onConfirmarTarea: (tarea: { titulo: string; fechaVencimiento: Date | null }) => void;
 }
 
 function normalizarParaComparar(texto: string): string {
@@ -62,20 +77,27 @@ export function GrabarVozSheet({
   householdId,
   categoriasCompras,
   categoriasGastos,
+  modoLista = "crear",
+  nombreListaActual,
   onCerrar,
   onConfirmarLista,
   onConfirmarGasto,
+  onConfirmarTarea,
 }: GrabarVozSheetProps) {
   const grabadora = useGrabadora();
+  const [nombreLista, setNombreLista] = useState<string | null>(null);
   const [itemsRevision, setItemsRevision] = useState<ItemRevision[] | null>(null);
   const [gastoRevision, setGastoRevision] = useState<GastoRevision | null>(null);
+  const [tareaRevision, setTareaRevision] = useState<TareaRevision | null>(null);
   const [errorProceso, setErrorProceso] = useState<string | null>(null);
 
   function cerrarTodo() {
     grabadora.cancelar();
     grabadora.reiniciar();
+    setNombreLista(null);
     setItemsRevision(null);
     setGastoRevision(null);
+    setTareaRevision(null);
     setErrorProceso(null);
     onCerrar();
   }
@@ -89,12 +111,20 @@ export function GrabarVozSheet({
       });
       return;
     }
+    if (resultado.tipo === "tarea") {
+      setTareaRevision({
+        titulo: resultado.tarea.titulo,
+        fechaVencimiento: resultado.tarea.fechaVencimiento ?? "",
+      });
+      return;
+    }
     if (resultado.items.length === 0) {
       setErrorProceso(
         "No se detectó ningún producto en el audio. Probá de nuevo, nombrando los items uno por uno."
       );
       return;
     }
+    setNombreLista(resultado.nombreLista);
     setItemsRevision(
       resultado.items.map((item) => ({
         ...item,
@@ -135,7 +165,11 @@ export function GrabarVozSheet({
 
   function confirmarLista() {
     if (!itemsRevision || itemsRevision.length === 0) return;
-    onConfirmarLista(itemsRevision.map(({ nombre, cantidad, categoriaId }) => ({ nombre, cantidad, categoriaId })));
+    if (modoLista === "crear" && !nombreLista) return;
+    onConfirmarLista(
+      modoLista === "crear" ? nombreLista : null,
+      itemsRevision.map(({ nombre, cantidad, categoriaId }) => ({ nombre, cantidad, categoriaId }))
+    );
     cerrarTodo();
   }
 
@@ -154,11 +188,53 @@ export function GrabarVozSheet({
     cerrarTodo();
   }
 
-  const enRevision = Boolean(itemsRevision || gastoRevision);
+  function confirmarTarea() {
+    if (!tareaRevision) return;
+    if (!tareaRevision.titulo.trim()) {
+      setErrorProceso("Ponele un título a la tarea antes de crearla.");
+      return;
+    }
+    onConfirmarTarea({
+      titulo: tareaRevision.titulo.trim(),
+      fechaVencimiento: tareaRevision.fechaVencimiento
+        ? new Date(`${tareaRevision.fechaVencimiento}T12:00:00`)
+        : null,
+    });
+    cerrarTodo();
+  }
+
+  const enRevision = Boolean(itemsRevision || gastoRevision || tareaRevision);
 
   return (
     <Sheet abierto={abierto} onCerrar={cerrarTodo} titulo="Usar el micrófono">
-      {gastoRevision ? (
+      {tareaRevision ? (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-fg-muted">Entendí que querés crear una tarea. Revisala antes de confirmar:</p>
+          <Input
+            label="Título"
+            value={tareaRevision.titulo}
+            onChange={(e) => setTareaRevision({ ...tareaRevision, titulo: e.target.value })}
+            maxLength={100}
+          />
+          <Input
+            label="Fecha de vencimiento (opcional)"
+            type="date"
+            value={tareaRevision.fechaVencimiento}
+            onChange={(e) => setTareaRevision({ ...tareaRevision, fechaVencimiento: e.target.value })}
+          />
+          {errorProceso && (
+            <p role="alert" className="text-sm text-danger">
+              {errorProceso}
+            </p>
+          )}
+          <Button type="button" fullWidth onClick={confirmarTarea}>
+            Crear tarea
+          </Button>
+          <Button type="button" variant="ghost" fullWidth onClick={cerrarTodo}>
+            Cancelar
+          </Button>
+        </div>
+      ) : gastoRevision ? (
         <div className="flex flex-col gap-4">
           <p className="text-sm text-fg-muted">Entendí esto — revisalo y corregí lo que haga falta:</p>
           <div className="flex flex-col items-center gap-1 rounded-xl border border-primary/30 bg-primary-soft px-4 py-4 text-center">
@@ -205,8 +281,20 @@ export function GrabarVozSheet({
         </div>
       ) : itemsRevision ? (
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-fg-muted">Revisá antes de agregarlos — tocá una categoría para cambiarla.</p>
-          <ul className="flex max-h-[45vh] flex-col gap-3 overflow-y-auto">
+          {modoLista === "crear" ? (
+            <Input
+              label="Nombre de la lista"
+              value={nombreLista ?? ""}
+              onChange={(e) => setNombreLista(e.target.value)}
+              maxLength={40}
+            />
+          ) : (
+            <p className="text-sm text-fg-muted">
+              Se van a agregar a <span className="font-medium text-fg">&ldquo;{nombreListaActual}&rdquo;</span>:
+            </p>
+          )}
+          <p className="text-sm text-fg-muted">Revisá los items — tocá una categoría para cambiarla.</p>
+          <ul className="flex max-h-[40vh] flex-col gap-3 overflow-y-auto">
             {itemsRevision.map((item, indice) => (
               <li key={indice} className="flex flex-col gap-2 rounded-xl border border-border bg-bg p-3">
                 <div className="flex items-center justify-between gap-2">
@@ -232,7 +320,8 @@ export function GrabarVozSheet({
             ))}
           </ul>
           <Button type="button" fullWidth onClick={confirmarLista} disabled={itemsRevision.length === 0}>
-            Agregar {itemsRevision.length} {itemsRevision.length === 1 ? "item" : "items"}
+            {modoLista === "crear" ? "Crear lista con" : "Agregar"} {itemsRevision.length}{" "}
+            {itemsRevision.length === 1 ? "item" : "items"}
           </Button>
           <Button type="button" variant="ghost" fullWidth onClick={cerrarTodo}>
             Cancelar
@@ -243,7 +332,7 @@ export function GrabarVozSheet({
           {grabadora.estado === "procesando" ? (
             <>
               <div className="h-16 w-16 animate-pulse rounded-full bg-primary-soft" aria-hidden="true" />
-              <p className="text-sm text-fg-muted">Escuchando y armando la lista…</p>
+              <p className="text-sm text-fg-muted">Escuchando y entendiendo lo que dijiste…</p>
             </>
           ) : (
             <>
@@ -267,7 +356,7 @@ export function GrabarVozSheet({
               <p className="text-center text-sm text-fg-muted">
                 {grabadora.estado === "grabando"
                   ? `Grabando… ${grabadora.segundos}s (tocá para terminar)`
-                  : 'Decí los productos de una lista, o "anotá gasto, luz, 35 mil pesos".'}
+                  : 'Decí una lista de compras, "anotá gasto, luz, 35 mil pesos", o "recordame sacar la basura el jueves".'}
               </p>
               {(grabadora.error || errorProceso) && !enRevision && (
                 <p role="alert" className="text-center text-sm text-danger">

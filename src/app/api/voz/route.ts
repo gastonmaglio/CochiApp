@@ -18,9 +18,15 @@ interface GastoExtraido {
   categoria: string;
 }
 
+interface TareaExtraida {
+  titulo: string;
+  fechaVencimiento: string | null;
+}
+
 type ContenidoExtraido =
-  | { tipo: "lista"; items: ItemExtraido[] }
-  | { tipo: "gasto"; gasto: GastoExtraido };
+  | { tipo: "lista"; nombreLista: string; items: ItemExtraido[] }
+  | { tipo: "gasto"; gasto: GastoExtraido }
+  | { tipo: "tarea"; tarea: TareaExtraida };
 
 export async function POST(request: Request): Promise<NextResponse> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -129,6 +135,8 @@ async function extraerContenido(
 ): Promise<ContenidoExtraido> {
   const listaCategoriasCompras = categoriasCompras.length > 0 ? categoriasCompras.join(", ") : "Otros";
   const listaCategoriasGastos = categoriasGastos.length > 0 ? categoriasGastos.join(", ") : "Otros";
+  const hoy = new Date().toISOString().slice(0, 10);
+  const diaSemanaHoy = new Intl.DateTimeFormat("es-AR", { weekday: "long" }).format(new Date());
 
   const respuesta = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -138,42 +146,45 @@ async function extraerContenido(
     },
     body: JSON.stringify({
       model: "gpt-4o-mini",
-      max_tokens: 600,
+      max_tokens: 700,
       temperature: 0,
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
           content: [
-            "Sos un asistente de una app de hogar compartido (listas de compras y gastos), en español argentino.",
-            "Recibís la transcripción de un audio corto y primero decidís de qué se trata:",
-            '(a) una LISTA DE COMPRAS (se nombran productos, sin montos de dinero por cada uno), o',
-            "(b) el registro de UN GASTO puntual.",
+            "Sos un asistente de una app de hogar compartido (listas de compras, tareas y gastos), en español argentino.",
+            `Hoy es ${diaSemanaHoy} ${hoy} (formato AAAA-MM-DD) — usalo para resolver fechas relativas como "mañana" o "el jueves".`,
+            "Recibís la transcripción de un audio corto y decidís de qué se trata, entre tres opciones:",
+            '(a) una LISTA DE COMPRAS (se nombran productos, sin montos de dinero por cada uno)',
+            "(b) el registro de UN GASTO puntual (un monto de dinero pegado a un concepto)",
+            '(c) una TAREA del hogar ("recordame...", "hay que...", "tengo que...", "creá una tarea para...")',
             "",
-            "Para (b), la palabra \"gasto\" puede aparecer en cualquier posición de la frase o directamente " +
-              'no decirse — lo que importa es el patrón, no una palabra mágica. Todas estas formas significan ' +
-              "LO MISMO (un gasto de luz por $35.000) y las tenés que reconocer igual:",
-            '  "anotá gasto luz treinta y cinco mil pesos"',
-            '  "anotá un gasto de luz de treinta y cinco mil"',
-            '  "luz, treinta y cinco mil, gasto"',
-            '  "luz, treinta y cinco mil pesos" (sin la palabra "gasto" en ningún lado)',
-            '  "gasté treinta y cinco mil pesos en luz"',
-            '  "pagué la luz, treinta y cinco mil"',
-            "La señal real de que es un gasto (no una lista) es que se menciona UN solo concepto " +
-              "junto a UN monto de dinero — una lista de compras nombra productos sin decir un precio " +
-              "de cada uno. Si hay un monto de plata pegado a un concepto, es (b), diga o no la palabra " +
-              '"gasto" explícitamente.',
+            "--- (a) LISTA DE COMPRAS ---",
+            "Para cada producto indicá su nombre (singular, sin la cantidad en el texto), la cantidad si se " +
+              'dijo (ej: "2 kg", "una docena", o null si no se dijo), y a cuál de estas categorías de compra ' +
+              `pertenece: ${listaCategoriasCompras}. Si ninguna encaja, usá "Otros". Separá bien los productos ` +
+              "aunque se hayan dicho todos seguidos en una sola frase.",
+            'Además, sugerí un nombre corto para la lista (2-3 palabras, ej: "Supermercado", "Farmacia", ' +
+              '"Ferretería") según lo que se está comprando — si no hay pistas claras, "Lista de compras".',
+            'Respondé exactamente: {"tipo": "lista", "nombreLista": string, "items": [{"nombre": string, "cantidad": string|null, "categoria": string}]}',
             "",
-            "Si es (a), para cada producto indicá su nombre (singular, sin la cantidad en el texto), " +
-              'la cantidad si se dijo (ej: "2 kg", "una docena", o null si no se dijo), y a cuál de estas ' +
-              `categorías de compra pertenece: ${listaCategoriasCompras}. Si ninguna encaja, usá "Otros". ` +
-              "Separá bien los productos aunque se hayan dicho todos seguidos en una sola frase.",
-          'Respondé exactamente: {"tipo": "lista", "items": [{"nombre": string, "cantidad": string|null, "categoria": string}]}',
+            "--- (b) GASTO ---",
+            "La palabra \"gasto\" puede aparecer en cualquier posición de la frase o directamente no decirse — " +
+              "lo que importa es el patrón (un monto de dinero pegado a un concepto), no una palabra mágica. " +
+              'Todas estas formas significan lo mismo: "anotá gasto luz 35 mil", "anotá un gasto de luz de 35 ' +
+              'mil", "luz, 35 mil, gasto", "luz, 35 mil pesos" (sin decir "gasto"), "gasté 35 mil en luz", ' +
+              '"pagué la luz, 35 mil".',
+            "Extraé: una descripción corta (2-4 palabras, sin el monto), el monto en pesos argentinos como " +
+              "número (sin puntos de miles, sin el símbolo $, ej. 35000 no 35.000), y a cuál de estas " +
+              `categorías de gasto pertenece: ${listaCategoriasGastos}. Si ninguna encaja, "Otros".`,
+            'Respondé exactamente: {"tipo": "gasto", "gasto": {"descripcion": string, "monto": number, "categoria": string}}',
             "",
-            "Si es (b), extraé: una descripción corta (2-4 palabras, sin el monto), el monto en pesos " +
-              "argentinos como número (sin puntos de miles, sin el símbolo $, ej. 35000 no 35.000), y a " +
-              `cuál de estas categorías de gasto pertenece: ${listaCategoriasGastos}. Si ninguna encaja, "Otros".`,
-          'Respondé exactamente: {"tipo": "gasto", "gasto": {"descripcion": string, "monto": number, "categoria": string}}',
+            "--- (c) TAREA ---",
+            "Extraé un título corto y claro (sin las palabras de comando tipo \"recordame\" o \"hay que\"), y " +
+              "si se mencionó una fecha (hoy, mañana, un día de la semana, una fecha puntual), convertila a " +
+              "AAAA-MM-DD usando la fecha de hoy de arriba como referencia; si no se mencionó ninguna fecha, null.",
+            'Respondé exactamente: {"tipo": "tarea", "tarea": {"titulo": string, "fechaVencimiento": string|null}}',
             "",
             "Respondé SOLO con el JSON, sin texto extra.",
           ].join("\n"),
@@ -202,6 +213,21 @@ async function extraerContenido(
     };
   }
 
+  if (parseado.tipo === "tarea" && parseado.tarea) {
+    return {
+      tipo: "tarea",
+      tarea: {
+        titulo: String(parseado.tarea.titulo ?? "Tarea"),
+        fechaVencimiento:
+          typeof parseado.tarea.fechaVencimiento === "string" ? parseado.tarea.fechaVencimiento : null,
+      },
+    };
+  }
+
   const items = Array.isArray(parseado.items) ? parseado.items : [];
-  return { tipo: "lista", items };
+  return {
+    tipo: "lista",
+    nombreLista: String(parseado.nombreLista ?? "Lista de compras"),
+    items,
+  };
 }

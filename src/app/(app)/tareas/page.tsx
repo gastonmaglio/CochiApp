@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Mic, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTareas } from "@/hooks/useTareas";
 import { useMiembrosHousehold } from "@/hooks/useMiembrosHousehold";
+import { useCategorias } from "@/hooks/useCategorias";
+import { useAccionesVoz } from "@/hooks/useAccionesVoz";
 import { useToast } from "@/contexts/ToastContext";
 import {
   actualizarSubtareas,
@@ -19,6 +21,7 @@ import { ordenarTareas } from "@/lib/utils/ordenarTareas";
 import { mensajeErrorFirebase } from "@/lib/utils/errores";
 import { TareaRow } from "@/components/tareas/TareaRow";
 import { TareaFormSheet } from "@/components/tareas/TareaFormSheet";
+import { GrabarVozSheet } from "@/components/voz/GrabarVozSheet";
 import { Button } from "@/components/ui/Button";
 import { EstadoVacio } from "@/components/ui/EstadoVacio";
 import type { Subtarea, Tarea } from "@/types/tarea";
@@ -30,11 +33,15 @@ export default function TareasPage() {
   const miembros = household?.miembros ?? [];
   const usuarios = useMiembrosHousehold(miembros);
   const { tareas, cargando } = useTareas(householdId);
+  const { categorias: categoriasCompras } = useCategorias(householdId, "categoriasCompras");
+  const { categorias: categoriasGastos } = useCategorias(householdId, "categoriasGastos");
+  const acciones = useAccionesVoz(householdId, user);
   const { mostrarToast } = useToast();
 
   const [sheetAbierto, setSheetAbierto] = useState(false);
   const [tareaEditando, setTareaEditando] = useState<Tarea | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [sheetVozAbierto, setSheetVozAbierto] = useState(false);
 
   const tareasOrdenadas = useMemo(() => ordenarTareas(tareas), [tareas]);
 
@@ -116,6 +123,14 @@ export default function TareasPage() {
         </Button>
       </div>
 
+      <button
+        type="button"
+        onClick={() => setSheetVozAbierto(true)}
+        className="flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 text-sm font-medium text-primary active:bg-primary-soft"
+      >
+        <Mic size={18} aria-hidden="true" /> Crear tarea por voz
+      </button>
+
       {cargando ? (
         <div className="flex flex-col gap-2" aria-hidden="true">
           {[0, 1, 2].map((i) => (
@@ -154,6 +169,23 @@ export default function TareasPage() {
         onGuardar={manejarGuardar}
         onBorrar={tareaEditando ? () => manejarBorrar(tareaEditando) : undefined}
       />
+
+      {user && householdId && (
+        <GrabarVozSheet
+          abierto={sheetVozAbierto}
+          user={user}
+          householdId={householdId}
+          categoriasCompras={categoriasCompras}
+          categoriasGastos={categoriasGastos}
+          modoLista="crear"
+          onCerrar={() => setSheetVozAbierto(false)}
+          onConfirmarLista={(nombreLista, items) =>
+            acciones.confirmarLista(nombreLista ?? "Lista de compras", items)
+          }
+          onConfirmarGasto={acciones.confirmarGasto}
+          onConfirmarTarea={acciones.confirmarTarea}
+        />
+      )}
     </main>
   );
 }
