@@ -13,6 +13,7 @@ import {
 } from "@/lib/services/finanzasPrivadas.service";
 import { calcularSaldoPersonal } from "@/lib/utils/saldoPersonal";
 import { formatearMonto } from "@/lib/utils/moneda";
+import { useContadorAnimado } from "@/hooks/useContadorAnimado";
 import { formatearFecha } from "@/lib/utils/fechas";
 import { mensajeErrorFirebase } from "@/lib/utils/errores";
 import {
@@ -40,6 +41,7 @@ export default function PrivadoPage() {
     () => (uid ? calcularSaldoPersonal(movimientos, gastosCompartidos, uid) : null),
     [movimientos, gastosCompartidos, uid]
   );
+  const saldoAnimado = useContadorAnimado(saldo?.saldo ?? 0);
 
   async function manejarGuardar(datos: DatosMovimientoPrivado) {
     if (!householdId || !uid || !sheetTipo) return;
@@ -99,7 +101,7 @@ export default function PrivadoPage() {
                   saldo.saldo >= 0 ? "text-primary" : "text-danger"
                 )}
               >
-                {formatearMonto(saldo.saldo)}
+                {formatearMonto(saldoAnimado)}
               </span>
               <div className="mt-2 flex w-full flex-col gap-1 border-t border-border pt-3 text-xs text-fg-muted">
                 <div className="flex justify-between">

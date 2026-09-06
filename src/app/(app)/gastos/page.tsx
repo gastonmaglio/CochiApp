@@ -27,6 +27,7 @@ import {
 } from "@/lib/services/gastosRecurrentes.service";
 import { inicioDeMes, inicioDeMesSiguiente } from "@/lib/utils/fechas";
 import { formatearMonto } from "@/lib/utils/moneda";
+import { useContadorAnimado } from "@/hooks/useContadorAnimado";
 import { mensajeErrorFirebase } from "@/lib/utils/errores";
 import { SelectorMes } from "@/components/gastos/SelectorMes";
 import { GastoRow } from "@/components/gastos/GastoRow";
@@ -72,6 +73,7 @@ export default function GastosPage() {
 
   const categoriasPorId = useMemo(() => new Map(categorias.map((c) => [c.id, c])), [categorias]);
   const totalMes = useMemo(() => gastos.reduce((acc, g) => acc + g.monto, 0), [gastos]);
+  const totalMesAnimado = useContadorAnimado(totalMes);
 
   function abrirNuevoGasto() {
     setGastoEditando(null);
@@ -194,7 +196,7 @@ export default function GastosPage() {
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6 pb-24">
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4 shadow-card">
         <SelectorMes mes={mes} onCambiar={setMes} />
-        <p className="text-center font-display text-2xl font-semibold text-fg">{formatearMonto(totalMes)}</p>
+        <p className="text-center font-display text-2xl font-semibold text-fg">{formatearMonto(totalMesAnimado)}</p>
       </div>
 
       <button

@@ -10,6 +10,7 @@ import { useListas } from "@/hooks/useListas";
 import { estaVencida, ordenarTareas } from "@/lib/utils/ordenarTareas";
 import { inicioDeMes, inicioDeMesSiguiente } from "@/lib/utils/fechas";
 import { formatearMonto } from "@/lib/utils/moneda";
+import { useContadorAnimado } from "@/hooks/useContadorAnimado";
 import { Mascota } from "@/components/ui/Mascota";
 import { cn } from "@/lib/utils/cn";
 
@@ -40,6 +41,7 @@ export default function InicioPage() {
   );
   const variacion =
     totalAnterior > 0 ? Math.round(((totalActual - totalAnterior) / totalAnterior) * 100) : null;
+  const totalActualAnimado = useContadorAnimado(totalActual);
 
   const tareasPendientes = useMemo(
     () => ordenarTareas(tareas).filter((t) => !t.completada),
@@ -68,7 +70,7 @@ export default function InicioPage() {
 
       <Link
         href="/tareas"
-        className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4 shadow-card"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4 shadow-card transition-transform active:scale-[0.98]"
       >
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-sm font-semibold text-fg-muted">
@@ -108,7 +110,7 @@ export default function InicioPage() {
 
       <Link
         href="/gastos"
-        className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated p-4 shadow-card"
+        className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated p-4 shadow-card transition-transform active:scale-[0.98]"
       >
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-sm font-semibold text-fg-muted">
@@ -117,7 +119,9 @@ export default function InicioPage() {
           <ArrowRight size={16} className="text-fg-muted" aria-hidden="true" />
         </div>
         <div className="flex items-baseline gap-2">
-          <p className="font-display text-2xl font-semibold text-fg">{formatearMonto(totalActual)}</p>
+          <p className="font-display text-2xl font-semibold text-fg">
+            {formatearMonto(totalActualAnimado)}
+          </p>
           {variacion !== null && variacion !== 0 && (
             <span
               className={cn(
@@ -138,7 +142,7 @@ export default function InicioPage() {
 
       <Link
         href="/listas"
-        className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4 shadow-card"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated p-4 shadow-card transition-transform active:scale-[0.98]"
       >
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-sm font-semibold text-fg-muted">

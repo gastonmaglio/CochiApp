@@ -11,6 +11,7 @@ import { useComprasCerradas } from "@/hooks/useComprasCerradas";
 import { useMiembrosHousehold } from "@/hooks/useMiembrosHousehold";
 import { inicioDeMes, inicioDeMesSiguiente, formatearMes } from "@/lib/utils/fechas";
 import { formatearMonto } from "@/lib/utils/moneda";
+import { useContadorAnimado } from "@/hooks/useContadorAnimado";
 import {
   compararConMesAnterior,
   generarInsightGastos,
@@ -63,6 +64,7 @@ export default function ResumenPage() {
   const [compraSeleccionada, setCompraSeleccionada] = useState<CompraCerrada | null>(null);
 
   const total = useMemo(() => totalGeneral(gastos), [gastos]);
+  const totalAnimado = useContadorAnimado(total);
   const totalAnterior = useMemo(() => totalGeneral(gastosMesAnterior), [gastosMesAnterior]);
   const comparacion = useMemo(
     () => compararConMesAnterior(total, totalAnterior),
@@ -96,7 +98,7 @@ export default function ResumenPage() {
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-6 pb-10">
       <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-bg-elevated p-4 shadow-card">
         <SelectorMes mes={mes} onCambiar={setMes} />
-        <p className="font-display text-3xl font-semibold text-fg">{formatearMonto(total)}</p>
+        <p className="font-display text-3xl font-semibold text-fg">{formatearMonto(totalAnimado)}</p>
         <ComparacionMesBadge comparacion={comparacion} />
         {totalAñoAnterior > 0 && (
           <ComparacionMesBadge

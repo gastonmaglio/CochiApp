@@ -28,10 +28,10 @@ export function CategoriaSelector({ categorias, valor, onCambiar }: CategoriaSel
             aria-checked={seleccionada}
             onClick={() => onCambiar(categoria.id)}
             className={cn(
-              "flex items-center gap-1.5 rounded-full border font-medium transition-colors",
+              "flex items-center gap-1.5 rounded-full border font-medium transition-all active:scale-95",
               esSubcategoria ? "min-h-8 px-2.5 text-xs" : "min-h-9 px-3 text-sm",
               seleccionada
-                ? "border-primary bg-primary-soft text-primary"
+                ? "scale-105 border-primary bg-primary-soft text-primary"
                 : "border-border bg-bg-elevated text-fg-muted"
             )}
           >
